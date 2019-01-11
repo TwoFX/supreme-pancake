@@ -1,0 +1,71 @@
+\RequirePackage[l2tabu,orthodox]{nag}
+\documentclass[10pt,twocolumn,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{amsmath}
+\usepackage{csquotes}
+
+\usepackage[
+	backend=biber
+]{biblatex}
+\addbibresource{gui.bib}
+
+\usepackage[hidelinks]{hyperref}
+
+\author{Markus Himmel}
+\title{Windows GUI}
+
+\newcommand{\bs}[1]{\textbf{\sffamily #1}}
+\newcommand{\winver}[1]{$^{\text{\bs{#1}}}$}
+
+\begin{document}
+	\maketitle
+
+	\begin{abstract}
+		The Graphical User Interface is one of the most important components
+		of a consumer-oriented operating system such as Microsoft Windows. This
+		report examines the components of the Windows operating system that
+		contribute to the graphical user interface, both from an application
+		programmer's and a system architect's point of view.
+	\end{abstract}
+
+	\section{Introduction}
+	\subsection{How to read this document}
+		The Windows operating system has seen many revisions over its
+		decades-long lifespan, and many of the features described in this
+		report differ significantly from version to version. At the same time,
+		documentation of the architecture of the Windows GUI is scarce at best.
+		For this reason, it is not possible to present an entirely consistent
+		exposition of the Windows GUI architecture of some fixed Windows
+		version.  Instead, different sections of this report may be based on
+		different versions of Windows. In order to aid the reader in keeping
+		track of which version of Windows is being examined at any given point
+		in time, sections and sometimes single paragraphs and sentences will be
+		marked with the Windows versions they describe. Here is an example:
+
+		GDI is not hardware-accelerated.\winver{V}
+
+		Table~\ref{tbl:abbrev} lists all abbreviations used in this document
+		and the Windows versions they refer to.
+
+		\begin{table}[h]
+			\begin{tabular}{r|l}
+				Abbreviation & Windows Version \\
+				\hline
+				\bs{3} & Windows NT 3.51 \\
+				\bs{4} & Windows NT 4.0 \\
+				\bs{XP} & Windows XP \\
+				\bs{V} & Windows Vista (\enquote{Longhorn}) \\
+				\bs{7} & Windows 7 \\
+			\end{tabular}
+			\caption{Table of abbreviations for Windows versions used in this document}
+			\label{tbl:abbrev}
+		\end{table}
+
+		\printbibliography
+\end{document}

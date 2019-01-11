@@ -8,8 +8,13 @@
 \usepackage{microtype}
 \usepackage{parskip}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
 \usepackage{csquotes}
 \usepackage{graphicx}
+\usepackage{tikz}
+
+\usepackage[margin=2cm]{geometry}
 
 \usepackage[
 	backend=biber
@@ -19,6 +24,8 @@
 \usepackage{menukeys}
 
 \usepackage[hidelinks]{hyperref}
+
+%\raggedbottom
 
 \author{Markus Himmel}
 \title{Windows GUI}
@@ -34,10 +41,11 @@
 		of a consumer-oriented operating system such as Microsoft Windows. This
 		report examines the components of the Windows operating system that
 		contribute to the graphical user interface, both from an application
-		programmer's and a system architect's point of view.
+		programmer's and a system architect's point of view. % TODO: Expand
 	\end{abstract}
 
 	\section{Introduction}
+		% TODO: Annoying stuff
 
 		Rigorously defining requirements for an efficient graphical user
 		interface is outside the scope of this report. Instead, we will focus
@@ -97,15 +105,63 @@
 
 		\subsection{Window messages and procedures}
 
-	\section{NT Kernel support for GUI applications}
-		
+	\section{NT Kernel support for GUI applications}\label{sec:win32k}
+		\begin{figure*}
+			\centering
+			\begin{tikzpicture}[yscale=0.7, xscale=1.3]
+				\node at (0, 0) {};
+				\node at (12, 10.5) {};
+				\draw[thick] (0, 5) -- (12, 5);
+				\node[anchor=south east] at (12, 5) { \small User };
+				\node[anchor=north east] at (12, 5) { \small Kernel };
+				\draw (0, 9.5) rectangle node (apps) { Applications } ++(10.5, 1);
+				\draw (0, 5.5) rectangle node { user32 } ++(1.5, 1);
+				\draw (0.75, 6.5) -- ++(0, 3);
+				\draw (0, 3.5) rectangle node { \texttt{win32k.sys} } ++(10.5, 1);
+				\draw (0.75, 4.5) -- ++(0, 1);
+				\draw (0, 0.25) rectangle node[align=center,text width=2.5cm] { Kernel-mode I/O Manager } ++(3, 2.25);
+				\draw[dashed,color=black!60] (0, 3) -- (12, 3);
+				\draw (1.5, 2.5) -- ++(0, 1);
+				\draw (1.75, 5.5) rectangle node (gdi32) { gdi32 } ++(1.5, 1);
+				\draw (2.5, 6.5) -- ++(0, 3);
+				\draw (2.5, 4.5) -- ++(0, 1);
+				\draw (0.2, 3.7) rectangle node { GDI } ++(1, 0.6);
+				\draw (3.5, 0.25) rectangle node { Kernel-mode Display Driver } ++(7, 1);
+				\draw (3.5, 1.5) rectangle node { Canonical Display Driver } ++(7, 1);
+				\draw (7, 2.5) -- ++(0, 1);
+				\draw (7, 1.25) -- ++(0, 0.25);
+				\draw (3.75, 5.5) rectangle node { DirectX } ++(2, 1);
+				\draw (3.75, 6.75) rectangle node { milcore } ++(2, 1);
+				\draw (6, 5.5) rectangle node { User-mode D3D Driver } ++(4.5, 1);
+				\draw (3.75, 8) rectangle node { Avalon } ++(2, 1);
+				\draw (3.75, 6) -| ++(-0.25, 3.5);
+				\draw (4.75, 9) -- ++(0, 0.5);
+				\draw (4.75, 7.75) -- ++(0, 0.25);
+				\draw (4.75, 6.5) -- ++(0, 0.25);
+				\draw (5.75, 6) -- ++(0.25, 0);
+				\draw (6, 8) rectangle node { DWM } ++(2, 1);
+				\draw (7, 9) -- ++(0, 0.5);
+				\draw (5.75, 7.25) -| ++(1.25, 0.75);
+			\end{tikzpicture}
+			\caption{An overview of the Windows GUI architecture, showing both user-mode
+				and kernel-mode components involved in rendering the Windows GUI}
+			\label{fig:arch}
+		\end{figure*}
+
+		\subsection{Moving \texttt{win32k} to the kernel}
+			It is possible to provide functionality described in section~\ref{sec:win32k}
+			using a user space module. Even further, proper microkernel design principles
+			mandate that \texttt{win32k} \emph{must} be placed in user space, merely
+			because it can. In fact, Windows versions prior to Windows NT 4.0
+			did implement \texttt{win32k} functionality in user space. However,
+			Windows NT 4.0 \cite{gdikernel}
 
 	\section{Win32 drawing APIs}
 		\subsection{Graphics Device Interface}
 
 		\subsection{DirectX}
 
-		\subsection{Avalon}
+		\subsection{Avalon}\label{sec:milcore}
 
 		\subsection{OpenGL}
 
@@ -169,9 +225,9 @@
 			use it to prevent trails. Furthermore, visual effects are trivial
 			to achieve when compositing is used. \cite{dwmoverview}
 
-		\subsection{The Desktop Window Manager\winver{V}}
+		\subsection{The Desktop Window Manager\winver{V}}\label{sec:dwm}
 			The \emph{Desktop Window Manager} (DWM) is the compositing window
-			manager used by Windows and was introduced in Longhorn
+			manager used by Windows and introduced in Longhorn
 			\cite{dwmoverview}.  It is implemented as a full-screen Direct3D
 			user-space application. In particular, DWM rendering is
 			hardware-accelerated. When DWM is active, applications render into
@@ -182,11 +238,69 @@
 			shortcut \keys{Win+\tab} and its more modest counterparts in more
 			recent versions of Microsoft Windows. Visual effects such as
 			transparency are implemented using DirectX pixel shaders. In addition,
-			double buffering using the a buffer flipping mechanism is implemented.
+			double buffering using a buffer flipping mechanism is implemented.
 			\cite{dwmdirectx}
-		\subsection{The Windows Display Driver Model\winver{V}}
 
-		\subsection{The non-compositing window manager\winver{XP}}
+			Even though DWM is a native application, its implementation closely
+			resembles that of an Avalon application. In particular, the desktop
+			is modeled as a visual tree in the same way that WPF applications
+			are modeled as a visual tree (refer to section~\ref{sec:milcore}
+			for details) and also uses \texttt{milcore.dll} to render the
+			visual tree through DirectX. This code reuse provides a
+			substantial number of necessary functional and performance
+			features essentially for free.  In particular, the visual tree
+			model, which at first might appear not to fit a mostly
+			non-hierarchical situation such as the desktop, very well,
+			turns out to be very beneficial, since the Avalon composition
+			engine comes with support for \emph{occlusion culling}---i.e.,
+			determining which parts of a window are visible at a particular
+			moment. This feature completely takes care of the task to
+			determine which parts of a window should be drawn. Similarly, the
+			entire logic that decides when to request which region of which window
+			to redraw (scheduling and dirty region management) is taken from
+			Avalon.
+			\cite{dwmwpf}
+
+			The way in which windows are redirected when DWM is in use depends
+			on the drawing API used by the application. GUI applications which
+			(directly or indirectly)
+			use DirectX for rendering can render into a single buffer located
+			in video memory allocated
+			by the DWM. Because DWM itself uses DirectX, DirectX applications
+			natively render into the format used by DWM, so the DWM can use
+			these buffers directly to perform composition. Sharing a single buffer
+			between an application and DWM is not natively supported by DirectX
+			but a WDDM feature; refer to section~\ref{sec:wddm} for details.
+			\cite{dwmredirect}
+
+			Applications employing GDI for their rendering cannot render into
+			the DirectX pixel format, but render into a DWM-provided main memory
+			buffer in their native GDI format. When the window is created, DWM
+			automatically also creates a DirectX buffer in video memory. The
+			application draws into the GDI buffer, and DWM manually transcribes
+			the GDI buffer to the DirectX buffer when necessary and uses the result
+			for composition.
+			\cite{dwmredirect}
+
+		\subsection{The Windows Display Driver Mo\-del\winver{V}}\label{sec:wddm}
+			The implementation of DWM described in section~\ref{sec:dwm} fundamentally
+			relies on graphics driver support in order to achieve reasonable performance.
+			Before Longhorn, 
+			\cite{dwmwddm}
+
+		\subsection{Hardware-accelerated GDI ren\-der\-ing\winver{7}}
+			During Longhorn development, having GDI directly render to DirectX
+			surfaces in video memory was deemed infeasible; not because GDI calls
+			could not be adapted to work with the DirectX buffer format, but because
+			GDI renders using the CPU and many GDI operations not only write to
+			the buffer, but also need to read from it, but reading from video memory
+			using the CPU is a very slow operation \cite{dwmredirect}. However,
+			Windows 7 does eliminate the main memory buffer for GDI. The performance
+			issues were resolved by providing explicit hardware acceleration for
+			the offending GDI operations in WDDM version 1.1. % TODO: Maybe expand?
+			\cite{win7}
+
+		\subsection{The non-compositing window ma\-na\-ger\winver{XP}}
 
 	\printbibliography
 \end{document}

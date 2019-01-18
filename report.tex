@@ -148,16 +148,53 @@
 			\label{fig:arch}
 		\end{figure*}
 
-		\subsection{Moving \texttt{win32k} to the kernel}
+		The functions available to the user for creating GUI applications are
+		exported by \texttt{user32.dll}, which is a user-space library.
+		However, the actual functionality is provided by a kernel module called
+		\texttt{win32k}. Refer to figure~\ref{fig:arch} for an overview over the
+		components involved in the Windows Graphical User Interface. \cite{probertwin32k}
+
+		\subsection{Moving \texttt{win32k} to the kernel\winver{4}}
 			It is possible to provide functionality described in section~\ref{sec:win32k}
 			using a user space module. Even further, proper microkernel design principles
 			mandate that \texttt{win32k} \emph{must} be placed in user space, merely
 			because it can. In fact, Windows versions prior to Windows NT 4.0
 			did implement \texttt{win32k} functionality in user space. However,
-			Windows NT 4.0 \cite{gdikernel}
+			in Windows NT 4.0 \texttt{win32k} was moved to kernel space for
+			performance reasons. Windows NT 3.51 contains large number of optimizations
+			to be able to support a user-space \texttt{win32k}, many of them related
+			to efficient execution of GDI operations (cf. section~\ref{sec:gdi}).
+			For example, GDI operations requested by the applications are not
+			actually drawn immediately by calling into the kernel and communicating
+			with the graphics hardware. Instead, GDI operations are placed in a
+			queue. Once the queue is full or is flushed manually by the application,
+			the switch into kernel mode is made and all queued operations are executed
+			in sequence. Symetrically, \texttt{win32k} data which is available to the application
+			is cached in user space.
+			Many (though not all) of these optimizations become unnecessary when
+			\texttt{win32k} is moved into kernel space, achieving a simpler implementation
+			with improved performance.
+			\cite{gdikernel}
+
+			The architectural justification for this change is that the subsystem
+			retains its microkernel-like interface while providing significantly
+			improved performance. This style of kernel architecture is referred
+			to as \emph{modified microkernel}. \cite{gdikernel}
+
+			Moving \texttt{win32k} from user mode to kernel mode without fundamentally
+			adapting its architecture---which would be very challending due to
+			compatibility---has created an entire class of security problems.
+			In several situations arising in the context of \texttt{win32k},
+			calling back from the kernel into user mode code (rather than just
+			returning) is necessary. In order to facilitate this, \texttt{win32k}
+			provides a mechanism called \textit{user-mode callbacks}. This
+			functionality has shown to be very prone to creating security problems,
+			such as information leakage or transitioning back into user mode after
+			a different code execution vulnerability has already been exploited.
+			\cite{mandy2011kernel}
 
 	\section{Win32 drawing APIs}
-		\subsection{Graphics Device Interface}
+		\subsection{Graphics Device Interface} \label{sec:gdi}
 
 		\subsection{DirectX}
 
@@ -200,7 +237,7 @@
 			\begin{figure}[h]
 				\centering
 				\includegraphics[width=0.8\columnwidth]{trail}
-				\caption{The classic \enquote{trail} effect}
+				\caption{The classic \enquote{trail} effect} % TODO: Reword
 				\label{fig:trail}
 			\end{figure}
 

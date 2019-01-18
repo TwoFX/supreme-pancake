@@ -358,6 +358,31 @@
 			buffer are patched. This model was updated to using proper virtual
 			addresses with WDDM 2.0, introduced in Windows 10. \cite{wddm2}
 
+			Finally, a third feature that is necessary to implement the redirection
+			mechanism for DirectX applications described in section~\ref{sec:dwm}
+			is DirectX surface sharing, which gives an application and the DWM
+			access to the same DirectX surface buffer, so that the DWM can use the
+			same surface for compositing that is used by the application for
+			drawing to. \cite{dwmredirect}
+
+			The desktop window manager cannot run without a WDDM-compliant
+			display driver \cite{dwmwddm}. If no such driver is available, one
+			of two things will happen, depending on the version of Windows that
+			is running. Under Windows Vista and Windows 7, DWM will be
+			disabled\footnote{In Windows Vista/7, there are some other ways for
+			DWM to be disabled. Applications can disable the DWM manually (for
+			example immediately before switching to full-screen mode)
+			\cite{disabledwm}, or DWM can be automatically disabled by an
+			application using the drawing APIs incorrectly \cite{dwmredirect}.}
+			and the non-compositing window manager\footnote{Contrary to the DWM,
+			the non-compositing window manager referred to as \textit{USER} resides
+			in \texttt{win32k} and thus in kernel space \cite{probertwin32k}.}
+			from Windows XP will be used. When running Windows 8 or later,
+			the DWM will be run, but a software-based renderer called
+			\textit{Microsoft Basic Display Adapter} will serve as a replacement
+			for the display driver \cite{dwmalwayson}.
+
+
 		\subsection{Hardware-accelerated GDI ren\-der\-ing\winver{7}}
 			During Longhorn development, having GDI directly render to DirectX
 			surfaces in video memory was deemed infeasible; not because GDI calls
@@ -373,8 +398,6 @@
 			of the number of open windows (however, VRAM comsumption still scales
 			linearly with the number of open windows).
 			\cite{win7}
-
-		\subsection{The non-compositing window ma\-na\-ger\winver{XP}}
 
 	\onecolumn{\printbibliography}
 \end{document}

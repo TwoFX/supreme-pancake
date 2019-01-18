@@ -283,10 +283,43 @@
 			\cite{dwmredirect}
 
 		\subsection{The Windows Display Driver Mo\-del\winver{V}}\label{sec:wddm}
-			The implementation of DWM described in section~\ref{sec:dwm} fundamentally
-			relies on graphics driver support in order to achieve reasonable performance.
-			Before Longhorn, 
-			\cite{dwmwddm}
+			The implementation of DWM described in section~\ref{sec:dwm}
+			fundamentally relies on graphics driver support in order to achieve
+			reasonable performance.  Prior to Longhorn, DirectX applications
+			assumed that they have exclusive access to the GPU. In particular,
+			there was no virtual memory and no support for preemption. This is
+			unproblematic as long as there is at most one active DirectX application
+			and that application has reasonably predictable video memory requirements.
+			However, the Desktop Window Manager \emph{is} a DirectX appliction that
+			by design both runs alongside other DirectX applications and whose
+			memory consumption is dependent on the number of open windows and therefore
+			very unpredictable.
+			In order to address these problems, display drivers targeting Longhorn
+			have to be written against the Windows Display Driver Model. This
+			display driver framework introduces the cooperative multitasking
+			features known from regular applications running on the CPU to the
+			GPU. \cite{dwmwddm}
+
+			One of these features is an implementation of preemtion called
+			WDDM \emph{scheduling}. The granularity of preemtion depends on
+			the version of DirectX that is used and hardware support. When
+			using \emph{Basic Scheduling}, available from DirectX 9 without
+			special hardware support, primitives and shaders cannot be interrupted,
+			so preemption can only take place inbetween these basic operations.
+			If the hardware supports it and DirectX 10 is in use, \emph{Advanced
+			Scheduling} is available, allowing preemption to take place in the mid
+			of primities or shaders. \cite{dwmwddm}
+
+			The other large feature required for cooperative multitasking is
+			virtual memory. As GPUs may have several regions of video memory
+			specialized for certain tasks, the address space of a GPU may
+			be nonlinear. For this reason, the GPU announces some number of
+			available segments of video memory to the driver framework \cite{gpuseg}.
+			When using the WDDM 1.$x$ model for virtual graphics
+			memory, applications work with segment physical addresses. In the event
+			that a piece of memory is moved or paged out, addresses in the command
+			buffer are patched. This model was updated to using proper virtual
+			addresses with WDDM 2.0, introduced in Windows 10. \cite{wddm2}
 
 		\subsection{Hardware-accelerated GDI ren\-der\-ing\winver{7}}
 			During Longhorn development, having GDI directly render to DirectX
@@ -297,10 +330,14 @@
 			using the CPU is a very slow operation \cite{dwmredirect}. However,
 			Windows 7 does eliminate the main memory buffer for GDI. The performance
 			issues were resolved by providing explicit hardware acceleration for
-			the offending GDI operations in WDDM version 1.1. % TODO: Maybe expand?
+			the offending GDI operations in WDDM version 1.1. In particular,
+			starting with Windows 7, the
+			main memory comsumption of the Desktop Window Manager is independent
+			of the number of open windows (however, VRAM comsumption still scales
+			linearly with the number of open windows).
 			\cite{win7}
 
 		\subsection{The non-compositing window ma\-na\-ger\winver{XP}}
 
-	\printbibliography
+	\onecolumn{\printbibliography}
 \end{document}

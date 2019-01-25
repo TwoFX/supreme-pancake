@@ -6,7 +6,7 @@
 \usepackage[english]{babel}
 \usepackage{lmodern}
 \usepackage{microtype}
-\usepackage{parskip}
+%\usepackage{parskip}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathtools}
@@ -32,6 +32,8 @@
 
 \newcommand{\bs}[1]{\textbf{\sffamily #1}}
 \newcommand{\winver}[1]{$^{\text{\hyperref[tbl:abbrev]{\bs{#1}}}}$}
+\newcommand{\winsection}[2]{\section{#1\winver{#2}}[#1]}
+\newcommand{\winsubsection}[2]{\subsection[#1]{#1\winver{#2}}}
 
 \begin{document}
 	\maketitle
@@ -120,16 +122,17 @@
 				\draw (0, 3.5) rectangle node { \texttt{win32k.sys} } ++(10.5, 1);
 				\draw (0.75, 4.5) -- ++(0, 1);
 				\draw (0, 0.25) rectangle node[align=center,text width=2.5cm] { Kernel-mode I/O Manager } ++(3, 2.25);
-				\draw[dashed,color=black!60] (0, 3) -- (12, 3);
+				\draw[dashed,color=black!60] (0, 3) -- (3.25, 3) -- (3.25, 1.75) --
+					(12, 1.75);
 				\draw (1.5, 2.5) -- ++(0, 1);
 				\draw (1.75, 5.5) rectangle node (gdi32) { gdi32 } ++(1.5, 1);
 				\draw (2.5, 6.5) -- ++(0, 3);
 				\draw (2.5, 4.5) -- ++(0, 1);
 				\draw (0.2, 3.7) rectangle node { GDI } ++(1, 0.6);
 				\draw (3.5, 0.25) rectangle node { Kernel-mode Display Driver } ++(7, 1);
-				\draw (3.5, 1.5) rectangle node { Canonical Display Driver } ++(7, 1);
-				\draw (7, 2.5) -- ++(0, 1);
-				\draw (7, 1.25) -- ++(0, 0.25);
+				\draw (3.5, 2.25) rectangle node { Canonical Display Driver } ++(7, 1);
+				\draw (7, 3.25) -- ++(0, 0.25);
+				\draw (7, 1.25) -- ++(0, 1);
 				\draw (3.75, 5.5) rectangle node { DirectX } ++(2, 1);
 				\draw (3.75, 6.75) rectangle node { milcore } ++(2, 1);
 				\draw (6, 5.5) rectangle node { User-mode D3D Driver } ++(4.5, 1);
@@ -151,11 +154,11 @@
 		The functions available to the user for creating GUI applications are
 		exported by \texttt{user32.dll}, which is a user-space library.
 		However, the actual functionality is provided by a kernel module called
-		\texttt{win32k}. Refer to figure~\ref{fig:arch} for an overview over the
+		\texttt{win32k}. Refer to Figure~\ref{fig:arch} for an overview over the
 		components involved in the Windows Graphical User Interface. \cite{probertwin32k}
 
-		\subsection{Moving \texttt{win32k} to the kernel\winver{4}}
-			It is possible to provide functionality described in section~\ref{sec:win32k}
+		\winsubsection{Moving \texttt{win32k} to the kernel}{4}
+			It is possible to provide functionality described in Section~\ref{sec:win32k}
 			using a user space module. Even further, proper microkernel design principles
 			mandate that \texttt{win32k} \emph{must} be placed in user space, merely
 			because it can. In fact, Windows versions prior to Windows NT 4.0
@@ -163,7 +166,7 @@
 			in Windows NT 4.0 \texttt{win32k} was moved to kernel space for
 			performance reasons. Windows NT 3.51 contains large number of optimizations
 			to be able to support a user-space \texttt{win32k}, many of them related
-			to efficient execution of GDI operations (cf. section~\ref{sec:gdi}).
+			to efficient execution of GDI operations (cf. Section~\ref{sec:gdi}).
 			For example, GDI operations requested by the applications are not
 			actually drawn immediately by calling into the kernel and communicating
 			with the graphics hardware. Instead, GDI operations are placed in a
@@ -194,7 +197,29 @@
 			\cite{mandy2011kernel}
 
 	\section{Win32 drawing APIs}
-		\subsection{Graphics Device Interface} \label{sec:gdi}
+		After registering a window, an application has to draw its client area
+		to the screen. Windows provides multiple APIs to accomplish this task.
+
+		\winsubsection{Graphics Device Interface}{V} \label{sec:gdi}
+			\textit{Graphics Device Interface} (GDI) is the oldest drawing API
+			that is available in modern Windows versions. Unlike its more
+			modern cousins, it predates modern 3D acceleration units and as such
+			was not designed for GPU hardware acceleration. Instead, it was
+			designed to operate using the CPU and supports its own driver model
+			for hardware acceleration called \textit{GDI Device Driver
+			Interface} (DDI) specifically for accelerating GDI
+			primitives. When the DDI was created, hardware that is able to
+			accelerate the specific operations used in GDI existed, but modern GPUs operate
+			very differently and cannot provide hardware acceleration. As such,
+			GDI operations always run on the CPU on Windows Vista. \cite{d2dvsgdi}
+
+			GDI functions are provided by the user space module
+			\texttt{gdi32.dll} which in turn calls into the GDI kernel residing
+			in \texttt{win32k.sys}. The GDI kernel communicates with the
+			system's DDI driver. Windows Vista only supports a single DDI driver,
+			the \textit{Canonical Display Driver}, which renders requested operations
+			into a buffer located in main memory. Refer to Figure~\ref{fig:arch}
+			for an overview. \cite{d2dvsgdi, dwmredirect}
 
 		\subsection{DirectX}
 
@@ -233,11 +258,16 @@
 			will be sent, but not handled because the application is not
 			responsive. The result is the well-known \enquote{trail} effect
 			observed in old versions of Microsoft Windows. Refer to
-			figure~\ref{fig:trail} for an example of the problem.
+			Figure~\ref{fig:trail} for an example of the problem.
 			\begin{figure}[h]
 				\centering
 				\includegraphics[width=0.8\columnwidth]{trail}
-				\caption{The classic \enquote{trail} effect} % TODO: Reword
+				\caption{The \enquote{trail} effect observed on pre-Vista versions
+					of Windows. An application is moved on top of another application
+					and then moved away. When the top window is moved away, the bottom
+					application needs to redraw the uncovered region. If it does not
+					respond to the repaint message, the moved portions of the top
+					window are not erased.}
 				\label{fig:trail}
 			\end{figure}
 
@@ -262,7 +292,7 @@
 			use it to prevent trails. Furthermore, visual effects are trivial
 			to achieve when compositing is used. \cite{dwmoverview}
 
-		\subsection{The Desktop Window Manager\winver{V}}\label{sec:dwm}
+		\winsubsection{The Desktop Window Manager}{V}\label{sec:dwm}
 			The \emph{Desktop Window Manager} (DWM) is the compositing window
 			manager used by Windows and introduced in Longhorn
 			\cite{dwmoverview}.  It is implemented as a full-screen Direct3D
@@ -281,7 +311,7 @@
 			Even though DWM is a native application, its implementation closely
 			resembles that of an Avalon application. In particular, the desktop
 			is modeled as a visual tree in the same way that WPF applications
-			are modeled as a visual tree (refer to section~\ref{sec:milcore}
+			are modeled as a visual tree (refer to Section~\ref{sec:milcore}
 			for details) and also uses \texttt{milcore.dll} to render the
 			visual tree through DirectX. This code reuse provides a
 			substantial number of necessary functional and performance
@@ -307,7 +337,7 @@
 			natively render into the format used by DWM, so the DWM can use
 			these buffers directly to perform composition. Sharing a single buffer
 			between an application and DWM is not natively supported by DirectX
-			but a WDDM feature; refer to section~\ref{sec:wddm} for details.
+			but a WDDM feature; refer to Section~\ref{sec:wddm} for details.
 			\cite{dwmredirect}
 
 			Applications employing GDI for their rendering cannot render into
@@ -319,8 +349,8 @@
 			for composition.
 			\cite{dwmredirect}
 
-		\subsection{The Windows Display Driver Mo\-del\winver{V}}\label{sec:wddm}
-			The implementation of DWM described in section~\ref{sec:dwm}
+		\winsubsection{The Windows Display Driver Mo\-del}{V}\label{sec:wddm}
+			The implementation of DWM described in Section~\ref{sec:dwm}
 			fundamentally relies on graphics driver support in order to achieve
 			reasonable performance.  Prior to Longhorn, DirectX applications
 			assumed that they have exclusive access to the GPU. In particular,
@@ -359,7 +389,7 @@
 			addresses with WDDM 2.0, introduced in Windows 10. \cite{wddm2}
 
 			Finally, a third feature that is necessary to implement the redirection
-			mechanism for DirectX applications described in section~\ref{sec:dwm}
+			mechanism for DirectX applications described in Section~\ref{sec:dwm}
 			is DirectX surface sharing, which gives an application and the DWM
 			access to the same DirectX surface buffer, so that the DWM can use the
 			same surface for compositing that is used by the application for
@@ -383,7 +413,7 @@
 			for the display driver \cite{dwmalwayson}.
 
 
-		\subsection{Hardware-accelerated GDI ren\-der\-ing\winver{7}}
+		\winsubsection{Hardware-accelerated GDI ren\-der\-ing}{7}
 			During Longhorn development, having GDI directly render to DirectX
 			surfaces in video memory was deemed infeasible; not because GDI calls
 			could not be adapted to work with the DirectX buffer format, but because

@@ -17,7 +17,8 @@
 \usepackage[margin=2cm]{geometry}
 
 \usepackage[
-	backend=biber
+	backend=biber,
+	citestyle=numeric-comp
 ]{biblatex}
 \addbibresource{gui.bib}
 
@@ -157,6 +158,13 @@
 		\texttt{win32k}. Refer to Figure~\ref{fig:arch} for an overview over the
 		components involved in the Windows Graphical User Interface. \cite{probertwin32k}
 
+		\texttt{win32k} maintains a list of all active GUI threads of the current
+		session. A GUI thread is somewhat circularly defined as a thread that
+		is known to \texttt{win32k} as a GUI thread. When created, a thread is not
+		a GUI thread. A thread is promoted to a GUI thread when it first calls into
+
+		\cite{probertwin32k,mandy2011kernel}
+
 		\winsubsection{Moving \texttt{win32k} to the kernel}{4}
 			It is possible to provide functionality described in Section~\ref{sec:win32k}
 			using a user space module. Even further, proper microkernel design principles
@@ -223,16 +231,54 @@
 
 		\subsection{DirectX}
 
-		\subsection{Avalon}\label{sec:milcore}
-			Unlike GDI and DirectX, Avalon is not a low level drawing framework
-			that communicates directly with a graphics driver, but instead a
+		\winsubsection{Avalon}{V}\label{sec:milcore}
+			Unlike GDI and DirectX, Avalon, also known as Windows Presentation
+			Foundation (WPF),
+			is not a low level drawing framework
+			that communicates directly with a graphics driver, but a
 			high level GUI framework available to CLR\footnote{The \textit{Common
 			Language Runtime} (CLR) is a runtime system comparable to the Java Virtual
 			Machine. It runs \textit{Common Intermediate Language} (CIL) bytecode.
 			The most well-known programming language targeting the CLR is Microsoft
 			C\#.} applications. Avalon is
 			implemented on top of DirectX. The major rendering work is performed
-			by a native 
+			by a native module called \texttt{milcore.dll} (where MIL is short for
+			\textit{Media Integration Layer}). Avalon applications maintain a
+			so-called \textit{visual tree} on their UI thread\footnote{An
+			earlier implementation using a rental threaded model where every
+			application thread was allowed to modify UI elements was scrapped
+			for interoperability reasons \cite{goingdeep}.} which represents the
+			client area of the application. An unmanaged portion of the UI thread
+			code then communicates the visual tree to a \texttt{milcore}-provided
+			rendering thread which keeps its own copy of the tree. In some situations,
+			raw image data is shared between UI thread and rendering thread. The
+			rendering thread then walks the visual tree and issues the correct
+			DirectX commands to draw the application.
+			\cite{goingdeep,dwmwpf}
+
+			Decoupling the UI thread from the rendering thread comes with several
+			advantages. Not having to wait for rendering to finish before being
+			able to make changes to the UI can improve application performance.
+			Conversely, being able to render despite a busy UI thread will improve
+			application responsiveness as perceived by the user. Additionally,
+			separating the two tasks allows for \textit{remoting}, i.e., running
+			an application and its UI thread on a server and displaying it
+			via a rendering thread running on a client. Since both client and
+			server maintain the visual tree, changes in the user interface can
+			efficiently be communicated to the client using deltas to the visual
+			tree.
+			\cite{goingdeep}
+
+			When the rendering thread is notified of a change to the visual tree,
+			it updates the application on the screen. This step is performed by
+			traversing the visual tree and drawing each component of the tree.
+			However, if rendering occurrs in response to a change to the visual
+			tree, not the entire visual tree is redrawn. Instead, \texttt{milcore}
+			employs dirty region management and occlusion culling---i.e.,
+			determining which parts of a window are visible at a particular
+			moment. These optimizations ensure that no unnecessary rendering takes
+			place.
+			\cite{goingdeep}
 
 		\subsection{OpenGL}
 
@@ -326,7 +372,7 @@
 			substantial number of necessary functional and performance
 			features essentially for free.  In particular, the visual tree
 			model, which at first might appear not to fit a mostly
-			non-hierarchical situation such as the desktop, very well,
+			non-hierarchical situation, such as the desktop, very well,
 			turns out to be very beneficial, since the Avalon composition
 			engine comes with support for \emph{occlusion culling}---i.e.,
 			determining which parts of a window are visible at a particular
@@ -336,6 +382,25 @@
 			to redraw (scheduling and dirty region management) is taken from
 			Avalon.
 			\cite{dwmwpf}
+
+			The visual \enquote{tree} as employed by DWM allows for non-tree edges
+			in order to render windows at locations different from their \enquote{actual}
+			position. This feature is used to implement thumbnails and previews.
+			Another use of this feature is the \enquote{magnifier} accessibility
+			feature, which renders a portion of a screen in a larger region.
+			It is implemented by additionally applying a transform to the entire
+			subtree that the virtual edge points to in order to render into a
+			magnified buffer\footnote{In addition, special care is taken by the
+			application
+			that this virtual edge is not traversed once again, which would result
+			in an unwanted instance of the Droste effect.}.
+			For most applications, this means that the pixels are naïvely scaled
+			up. However, Avalon applications come with special support for magnification,
+			resulting in a pixel-perfect magnified presentation. This support
+			is enabled by specific handling in Avalon---in particular, the DWM's
+			visual tree does \emph{not} have access to the visual tree of an
+			Avalon application.
+			\cite{goingdeep}
 
 			The way in which windows are redirected when DWM is in use depends
 			on the drawing API used by the application. GUI applications which
@@ -376,7 +441,7 @@
 			features known from regular applications running on the CPU to the
 			GPU. \cite{dwmwddm}
 
-			One of these features is an implementation of preemtion called
+			One of these features is an implementation of preemption called
 			WDDM \emph{scheduling}. The granularity of preemtion depends on
 			the version of DirectX that is used and hardware support. When
 			using \emph{Basic Scheduling}, available from DirectX 9 without

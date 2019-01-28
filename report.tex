@@ -1,5 +1,5 @@
 \RequirePackage[l2tabu,orthodox]{nag}
-\documentclass[10pt,twocolumn,a4paper,os=win]{article}
+\documentclass[10pt,twocolumn,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -22,7 +22,7 @@
 ]{biblatex}
 \addbibresource{gui.bib}
 
-\usepackage{menukeys}
+\usepackage[os=win]{menukeys}
 
 \usepackage[hidelinks]{hyperref}
 
@@ -72,7 +72,9 @@
 			single paragraphs and sentences will be marked with the Windows
 			versions they describe. Here is an example:
 
+			\vspace{1em}
 			GDI is not hardware-accelerated.\winver{V}
+			\vspace{1em}
 
 			Table~\ref{tbl:abbrev} lists all abbreviations used in this document
 			and the Windows versions they refer to.
@@ -120,9 +122,9 @@
 				\draw (0, 9.5) rectangle node (apps) { Applications } ++(10.5, 1);
 				\draw (0, 5.5) rectangle node { user32 } ++(1.5, 1);
 				\draw (0.75, 6.5) -- ++(0, 3);
-				\draw (0, 3.5) rectangle node { \texttt{win32k.sys} } ++(10.5, 1);
+				\draw (0, 3.5) rectangle node { \texttt{win32k.sys} } ++(7.5, 1);
 				\draw (0.75, 4.5) -- ++(0, 1);
-				\draw (0, 0.25) rectangle node[align=center,text width=2.5cm] { Kernel-mode I/O Manager } ++(3, 2.25);
+				\draw (0, -1) rectangle node[align=center,text width=2.5cm] { Kernel-mode I/O Manager } ++(3, 3.5);
 				\draw[dashed,color=black!60] (0, 3) -- (3.25, 3) -- (3.25, 1.75) --
 					(12, 1.75);
 				\draw (1.5, 2.5) -- ++(0, 1);
@@ -130,10 +132,13 @@
 				\draw (2.5, 6.5) -- ++(0, 3);
 				\draw (2.5, 4.5) -- ++(0, 1);
 				\draw (0.2, 3.7) rectangle node { GDI } ++(1, 0.6);
-				\draw (3.5, 0.25) rectangle node { Kernel-mode Display Driver } ++(7, 1);
-				\draw (3.5, 2.25) rectangle node { Canonical Display Driver } ++(7, 1);
-				\draw (7, 3.25) -- ++(0, 0.25);
-				\draw (7, 1.25) -- ++(0, 1);
+				\draw (3.5, -1) rectangle node { Kernel-mode Display Driver } ++(7, 1);
+				\draw (3.5, 2.25) rectangle node { Canonical Display Driver } ++(4, 1);
+				\draw (3.5, 0.25) rectangle node { DirectX Kernel Subsystem } ++(7, 1);
+				\draw (7, 0) -- ++(0, 0.25);
+				\draw (9.25, 1.25) -- ++(0, 4.25);
+				\draw (5.5, 3.25) -- ++(0, 0.25);
+				\draw (5.5, 1.25) -- ++(0, 1);
 				\draw (3.75, 5.5) rectangle node { DirectX } ++(2, 1);
 				\draw (3.75, 6.75) rectangle node { milcore } ++(2, 1);
 				\draw (6, 5.5) rectangle node { User-mode D3D Driver } ++(4.5, 1);
@@ -148,7 +153,9 @@
 				\draw (5.75, 7.25) -| ++(1.25, 0.75);
 			\end{tikzpicture}
 			\caption{An overview of the Windows GUI architecture, showing both user-mode
-				and kernel-mode components involved in rendering the Windows GUI}
+				and kernel-mode components involved in rendering the Windows GUI. The
+				diagram assumes a machine Running Windows Vista using a Vista-ready
+				GPU with appropriate drivers.}
 			\label{fig:arch}
 		\end{figure*}
 
@@ -158,18 +165,30 @@
 		\texttt{win32k}. Refer to Figure~\ref{fig:arch} for an overview over the
 		components involved in the Windows Graphical User Interface. \cite{probertwin32k}
 
-		\texttt{win32k} maintains a list of all active GUI threads of the current
-		session. A GUI thread is somewhat circularly defined as a thread that
-		is known to \texttt{win32k} as a GUI thread. When created, a thread is not
-		a GUI thread. A thread is promoted to a GUI thread when it first calls into
-
+		\texttt{win32k} maintains a list of all active GUI threads of the
+		current session. A GUI thread is somewhat circularly defined as a
+		thread that is known to \texttt{win32k} as a GUI thread. When created,
+		a thread is not a GUI thread. A thread is promoted to a GUI thread when
+		it first calls into \texttt{win32k}, for example when calling
+		\texttt{CreateWindowEx} from \texttt{user32.dll}. After a thread is
+		promoted, \texttt{win32k} becomes aware of the thread (and in
+		particular, is notified of its destruction). In addition, the thread
+		receives a bigger kernel stack, because \texttt{win32k} call chains
+		can become rather deep and some specific mechanisms employed by \texttt{win32k}
+		require extra stack space.
 		\cite{probertwin32k,mandy2011kernel}
 
+		Besides managing GUI threads, \texttt{win32k} contains the kernel portion
+		of window management. It responds to requests to create and close windows
+		and keeps a list of all top-level windows of the window station.
+		\cite{probertwin32k,goingdeep}
+
 		\winsubsection{Moving \texttt{win32k} to the kernel}{4}
-			It is possible to provide functionality described in Section~\ref{sec:win32k}
+			It is possible to provide the functionality described in Section~\ref{sec:win32k}
 			using a user space module. Even further, proper microkernel design principles
-			mandate that \texttt{win32k} \emph{must} be placed in user space, merely
-			because it can. In fact, Windows versions prior to Windows NT 4.0
+			mandate that \texttt{win32k} \emph{must} be placed in user space, because
+			it is not inherently reliant on kernel mode functionality.
+			In fact, Windows versions prior to Windows NT 4.0
 			did implement \texttt{win32k} functionality in user space. However,
 			in Windows NT 4.0 \texttt{win32k} was moved to kernel space for
 			performance reasons. Windows NT 3.51 contains large number of optimizations
@@ -229,7 +248,20 @@
 			into a buffer located in main memory. Refer to Figure~\ref{fig:arch}
 			for an overview. \cite{d2dvsgdi, dwmredirect}
 
-		\subsection{DirectX}
+		\subsection{DirectX} % Todo: Citations!!
+			Microsoft DirectX is a collection of APIs exposing functionality of
+			a GPU to application developers. While originally intended for
+			multimedia applications such as video playback and video games, it
+			is now also used for regular GUI applications and multiple specific
+			APIs have been added to the collection over the years to further
+			facilitate this use case, with the intention to replace GDI.
+			Unlike GDI applications, DirectX applications
+			are rendered by the GPU into video memory. \cite{d2dvsgdi}
+
+			In the context of graphics programming, the most fundamental part of
+			DirectX is Direct3D, which provides support for 3D graphics. The
+			APIs tailored towards traditional GUI developers, Direct2D and
+			DirectWrite, are implemented on top of Direct3D.
 
 		\winsubsection{Avalon}{V}\label{sec:milcore}
 			Unlike GDI and DirectX, Avalon, also known as Windows Presentation
@@ -486,6 +518,8 @@
 			\textit{Microsoft Basic Display Adapter} will serve as a replacement
 			for the display driver \cite{dwmalwayson}.
 
+			From a driver developer's point of view,
+			\cite{wddmarch}
 
 		\winsubsection{Hardware-accelerated GDI ren\-der\-ing}{7}
 			During Longhorn development, having GDI directly render to DirectX

@@ -41,14 +41,33 @@
 
 	\begin{abstract}
 		The Graphical User Interface is one of the most important components
-		of a consumer-oriented operating system such as Microsoft Windows. This
-		report examines the components of the Windows operating system that
-		contribute to the graphical user interface, both from an application
-		programmer's and a system architect's point of view. % TODO: Expand
+		of a consumer-oriented operating system such as Microsoft Windows. As
+		such, its proper functioning is crucial to the operating system's success.
+
+		This report examines the components of the Windows operating system
+		that contribute to the graphical user interface, both from an
+		application programmer's and a system architect's point of view. The
+		APIs presented to application programmers to register GUI applications
+		and to draw graphical applications to the screen are reviewed. In addition,
+		implementation details of the graphical user interface and window management
+		are examined.
 	\end{abstract}
 
 	\section{Introduction}
-		% TODO: Annoying stuff
+		A \textit{Graphical User Interface} (GUI) is a means of communicating
+		with an electronic device such as a personal computer that uses graphical
+		icons and other visual indicators to represent application state. In
+		contrast, classical command-line interfaces represent program state to
+		the user using text-based representations. In addition, when a GUI is
+		in use, the user is able to manipulate application elements using graphical
+		message, for example by selecting or dragging with a computer mouse.
+
+		An important reason for choosing a graphical user interface for an
+		application instead of a text-based one is that in some cases, graphical
+		representations of application state gives access to more intuitive and
+		better metaphors, i.e., appropriate images and icons better represent
+		the real-world situtations a computer prgram models and the ways they
+		interact than a text-based interface could.
 
 		Rigorously defining requirements for an efficient graphical user
 		interface is outside the scope of this report. Instead, we will focus
@@ -84,14 +103,11 @@
 				\begin{tabular}{r|l}
 					Abbreviation & Windows Version \\
 					\hline
-					\bs{3} & Windows NT 3.51 \\
-					\bs{4} & Windows NT 4.0 \\
-					\bs{XP} & Windows XP \\
+					\bs{NT4} & Windows NT 4.0 \\
 					\bs{V} & Windows Vista (\enquote{Longhorn}) \\
 					\bs{7} & Windows 7 \\
 					\\
-					\bs{WRK} & Windows research kernel \\
-					\bs{R} & ReactOS source code
+					\bs{ROS} & ReactOS source code
 				\end{tabular}
 				\caption{Abbreviations for Windows versions used in
 					this document}
@@ -102,13 +118,86 @@
 			may exist for any Windows version. In this situation, the author of
 			this report used the source code of the ReactOS project in order to
 			at least present \emph{a} implementation, without intending to imply
-			that this implementation is similar to that of any real Windows
-			version.
+			that this implementation is similar to that of any real Windows version.
 
 	\section{Win32 GUI applications}
-		\subsection{Window objects}
+		This section gives a broad overview over Windows GUI applications from an
+		application developer's point of view. It will serve as a starting point
+		for the deeper investigation of implementation details in the following
+		sections.
+
+		\subsection{Window classes and objects}
+			The fundamental building block of a Windows GUI application is the
+			\textit{Window object}, typically just referred to as \textit{window}.
+			Window objects are not only windows in the colloquial sense, but also
+			most types of controls found inside application windows, such as buttons
+			or text boxes. Windows are organized in a hierarchical structure.
+			Top-level windows do not have a parent window and are referred to as
+			\textit{application windows}. Every window has zero or more child
+			windows. Application windows consist of two parts: The \textit{non-client
+			area} consists of the frame of the window, including the title bar and
+			controls like the close button. It is drawn by the operating system.
+			The \textit{client area} is the part of the window that is drawn by
+			the application itself.
+			\cite{whatiswindow}
+
+			Each window object is an instance of a given \textit{Window class}.
+			Window classes, while conceptually comparable, are not classes in
+			the object-oriented programming sense. Instead, windows classes are
+			registered to the kernel at runtime and can then be instantiated.
+			Window classes determine the appearance and behavior of a Window.
+			Instances of a window class are created using the function
+			\texttt{CreateWindowEx}, which takes the name of the window class
+			to instantiate and returns a handle to the newly created window.
+			The type of the handle is \texttt{HWND}. This type is opaque to the
+			application developer. Functions that in some way operate on a
+			window object take the \texttt{HWND} as a parameter.
+			\cite{creatingwindow,whatiswindow}
 
 		\subsection{Window messages and procedures}
+			Window classes determine the behavior of window objects. The mechanism
+			through which window object behavior is defined is the reaction of
+			a window object to messages sent to the object. The callback that
+			is called when a window object receives a window message is called
+			\textit{Window procedure} and is part of the window class, i.e., when
+			registering a window class, a pointer to the window procedure for the
+			window class is part of the data of the window class. The window
+			procedure takes four parameters: The \texttt{HWND} for the window
+			object that received the window message, a numeric code giving the
+			type of the message received, and two parameters.
+
+			Inside the window procedure, messages may or may not be handled depending
+			on their type. Typical types of messages are requests to repaint some
+			region of the window, notifications about user input, or the notification
+			that the application is about to exit. Regardless of whether the window
+			procedure was able to handle the message or not, at the end of the
+			window procedure, a call to \texttt{DefWindowProc} must be made, resulting
+			in execution of a default window procedure to ensure that all messages
+			are handled.
+
+			In order to support this message-driven mode of operation, the main
+			thread of every Windows GUI application is required to execute a
+			message loop immediately after creating the main application
+			window\footnote{In particular, creation of components on the main
+			window is performed in the message handler for the
+			\texttt{WM\_CREATE} message, so the main application window will
+			not display any controls or content before the main thread enters
+			the message loop.}. Applications may fetch the next message in the
+			queue using \texttt{GetMessage}. The application then has to pass
+			the message first to \texttt{TranslateMessage} and
+			\texttt{DispatchMessage}. \texttt{TranslateMessage} translates key
+			code messages returned by the keyboard driver into Unicode
+			characters according to the current keyboard layout and posts new
+			messages with these characters to the application. This is a step performed
+			by the application itself instead of the operating system because
+			there are some cases where an application wants to process the virtual
+			key codes instead of the mapped ones and because the current keyboard
+			layout depends on the current thread, so the kernel thread generating
+			the messages is by itself unable to map virtual key codes to actual
+			key codes. \texttt{DispatchMessage} then invokes that window procedure
+			of the window object the message was posted to. The target \texttt{HWND}
+			is part of the message record fetched by \texttt{GetMessage}.
+
 
 	\section{NT Kernel support for GUI applications}\label{sec:win32k}
 		\begin{figure*}
@@ -183,7 +272,20 @@
 		and keeps a list of all top-level windows of the window station.
 		\cite{probertwin32k,goingdeep}
 
-		\winsubsection{Moving \texttt{win32k} to the kernel}{4}
+		Another major responsibility of \texttt{win32k} is the \textit{Raw Input
+		Thread} (RIT). The RIT is responsible for receiving user input and posting
+		messages to the correct window\footnote{Implementation details of the
+		RIT appear to be undocumented. The ReactOS implementation of
+		the Raw Input Thread continuously and actively polls mouse and keyboard
+		in turn. If the driver returns a new input, the recipient top-level HWND
+		is determined. In case of keyboard input or a mouse event while the mouse
+		has been captured by an application, the active or capturing application
+		receives the message, respectively. In case of a mouse event while the
+		mouse is not caputured, all top-level windows are enumerated and the
+		window the mouse is above is selected.\winver{ROS}}.
+		\cite{probertwin32k}
+
+		\winsubsection{Moving \texttt{win32k} to the kernel}{NT4}
 			It is possible to provide the functionality described in Section~\ref{sec:win32k}
 			using a user space module. Even further, proper microkernel design principles
 			mandate that \texttt{win32k} \emph{must} be placed in user space, because
@@ -312,9 +414,39 @@
 			place.
 			\cite{goingdeep}
 
-		\subsection{OpenGL}
+		\subsection{Cross-platform graphics APIs} % Todo: Citations
+			Besides the essentially Windows-specific DirectX API, there are several
+			cross-platform APIs that aim to fill a similar niche\footnote{It
+			should be noted that DirectX does not fill a single niche. In particular,
+			different versions of the DirectX API emphasize different usage models.
+			DirectX version 11 and before are most comparable to OpenGL in being
+			relatively high-level. In contrast, DirectX 12 is more low-level and
+			thus similar to Vulkan.}. Of these, two are available on Windows: OpenGL
+			and Vulkan.
 
-		% TODO: Vulkan, Metal, ...
+			OpenGL is officially supported by Windows. Drivers for OpenGL are
+			loaded through a mechanism called \textit{installable client
+			drivers} (ICD). Microsoft provides a module called
+			\texttt{opengl32.dll} which will then check a specific registry key
+			for a vendor-provided OpenGL driver. If such a driver is found,
+			OpenGL calls will be relayed to this driver. Otherwise, a
+			default implementation provided by Microsoft will be used. Regardless
+			of which OpenGL implementation is used, OpenGL applications first obtain
+			a GDI device context via \texttt{getDC(HWND)} and then pass this device
+			context to the Microsoft-provided function \texttt{wglCreateContext}
+			to obtain an OpenGL rendering context for use in the cross-platform portion
+			of the application.
+
+			Support for graphics software written against the Vulkan API is not
+			directly built into Windows as in the OpenGL case. Instead, Khronos,
+			the working group that authored the Vulkan specification, provide
+			a loader that searches for Vulkan-compatible display drivers using
+			an installable client driver model similar to that of OpenGL. Vulkan
+			specifies a Windows-specific extension to create a Vulkan surface that
+			corresponds to the client area of a \texttt{HWND}:
+			\texttt{vkCreateWin32SurfaceKHR}. Once this surface
+			has been created, the rest of the code of a Vulkan application is
+			platform-agnostic. % Cite Vulkan spec here
 
 	\section{Window Management}
 		\subsection{Window managers and compositing}
@@ -518,8 +650,19 @@
 			\textit{Microsoft Basic Display Adapter} will serve as a replacement
 			for the display driver \cite{dwmalwayson}.
 
-			From a driver developer's point of view,
-			\cite{wddmarch}
+			From a GPU driver developer's point of view, a WDDM driver consists
+			of a \textit{user-mode display driver} (also referred to as
+			\textit{user-mode Direct3D driver}) and a kernel mode
+			\textit{display miniport driver}, sometimes called kernel-mode
+			display driver. Both components are solely concerned with handling
+			DirectX operations---calls to all other types of graphics API that
+			are available on Windows, notably including OpenGL in case the driver
+			vendor chooses not to provide direct implementation of OpenGL via
+			an installable client driver, are either not
+			hardware-accelerated or relayed to the appropriate DirectX commands.
+			Figure~\ref{fig:arch} visualizes the interaction of a WDDM driver with
+			other GUI-related components.
+			\cite{wddmarch,d2dvsgdi}
 
 		\winsubsection{Hardware-accelerated GDI ren\-der\-ing}{7}
 			During Longhorn development, having GDI directly render to DirectX

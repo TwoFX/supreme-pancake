@@ -6,7 +6,6 @@
 \usepackage[english]{babel}
 \usepackage{lmodern}
 \usepackage{microtype}
-%\usepackage{parskip}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathtools}
@@ -25,8 +24,6 @@
 \usepackage[os=win]{menukeys}
 
 \usepackage[hidelinks]{hyperref}
-
-%\raggedbottom
 
 \author{Markus Himmel}
 \title{Windows GUI}
@@ -64,7 +61,7 @@
 
 		An important reason for choosing a graphical user interface for an
 		application instead of a text-based one is that in some cases, graphical
-		representations of application state gives access to more intuitive and
+		representations of application state give access to more intuitive and
 		better metaphors, i.e., appropriate images and icons better represent
 		the real-world situtations a computer prgram models and the ways they
 		interact than a text-based interface could.
@@ -154,7 +151,7 @@
 			window object take the \texttt{HWND} as a parameter.
 			\cite{creatingwindow,whatiswindow}
 
-		\subsection{Window messages and procedures}
+		\subsection{Window messages and procedures} % Todo: Citations!
 			Window classes determine the behavior of window objects. The mechanism
 			through which window object behavior is defined is the reaction of
 			a window object to messages sent to the object. The callback that
@@ -164,16 +161,16 @@
 			window class is part of the data of the window class. The window
 			procedure takes four parameters: The \texttt{HWND} for the window
 			object that received the window message, a numeric code giving the
-			type of the message received, and two parameters.
+			type of the message received, and two parameters for the message.
+			\cite{aboutwinproc}
 
-			Inside the window procedure, messages may or may not be handled depending
+			Inside the window procedure, messages may or may not be handled, depending
 			on their type. Typical types of messages are requests to repaint some
 			region of the window, notifications about user input, or the notification
-			that the application is about to exit. Regardless of whether the window
-			procedure was able to handle the message or not, at the end of the
-			window procedure, a call to \texttt{DefWindowProc} must be made, resulting
-			in execution of a default window procedure to ensure that all messages
-			are handled.
+			that the application is about to exit. If a message was not handled
+			by the window procedure, a call to \texttt{DefWindowProc} must be
+			made, resulting in execution of a default window procedure to
+			ensure that all messages are handled. \cite{aboutwinproc}
 
 			In order to support this message-driven mode of operation, the main
 			thread of every Windows GUI application is required to execute a
@@ -184,19 +181,19 @@
 			not display any controls or content before the main thread enters
 			the message loop.}. Applications may fetch the next message in the
 			queue using \texttt{GetMessage}. The application then has to pass
-			the message first to \texttt{TranslateMessage} and
+			the message first to \texttt{TranslateMessage} and then to
 			\texttt{DispatchMessage}. \texttt{TranslateMessage} translates key
 			code messages returned by the keyboard driver into Unicode
 			characters according to the current keyboard layout and posts new
 			messages with these characters to the application. This is a step performed
 			by the application itself instead of the operating system because
 			there are some cases where an application wants to process the virtual
-			key codes instead of the mapped ones and because the current keyboard
+			key codes instead of the mapped ones \cite{translatemessage} and because the current keyboard
 			layout depends on the current thread, so the kernel thread generating
 			the messages is by itself unable to map virtual key codes to actual
-			key codes. \texttt{DispatchMessage} then invokes that window procedure
+			key codes\winver{ROS}. \texttt{DispatchMessage} then invokes the window procedure
 			of the window object the message was posted to. The target \texttt{HWND}
-			is part of the message record fetched by \texttt{GetMessage}.
+			is part of the message record fetched by \texttt{GetMessage}. \cite{messages}
 
 
 	\section{NT Kernel support for GUI applications}\label{sec:win32k}
@@ -350,7 +347,7 @@
 			into a buffer located in main memory. Refer to Figure~\ref{fig:arch}
 			for an overview. \cite{d2dvsgdi, dwmredirect}
 
-		\subsection{DirectX} % Todo: Citations!!
+		\subsection{DirectX}
 			Microsoft DirectX is a collection of APIs exposing functionality of
 			a GPU to application developers. While originally intended for
 			multimedia applications such as video playback and video games, it
@@ -358,12 +355,12 @@
 			APIs have been added to the collection over the years to further
 			facilitate this use case, with the intention to replace GDI.
 			Unlike GDI applications, DirectX applications
-			are rendered by the GPU into video memory. \cite{d2dvsgdi}
+			are rendered by the GPU into video memory. \cite{d2dvsgdi,aboutd2d}
 
 			In the context of graphics programming, the most fundamental part of
 			DirectX is Direct3D, which provides support for 3D graphics. The
 			APIs tailored towards traditional GUI developers, Direct2D and
-			DirectWrite, are implemented on top of Direct3D.
+			DirectWrite, are implemented on top of Direct3D. \cite{aboutd2d}
 
 		\winsubsection{Avalon}{V}\label{sec:milcore}
 			Unlike GDI and DirectX, Avalon, also known as Windows Presentation
@@ -414,7 +411,7 @@
 			place.
 			\cite{goingdeep}
 
-		\subsection{Cross-platform graphics APIs} % Todo: Citations
+		\subsection{Cross-platform graphics APIs}
 			Besides the essentially Windows-specific DirectX API, there are several
 			cross-platform APIs that aim to fill a similar niche\footnote{It
 			should be noted that DirectX does not fill a single niche. In particular,
@@ -422,7 +419,11 @@
 			DirectX version 11 and before are most comparable to OpenGL in being
 			relatively high-level. In contrast, DirectX 12 is more low-level and
 			thus similar to Vulkan.}. Of these, two are available on Windows: OpenGL
-			and Vulkan.
+			and Vulkan. Since, unlike DirectX, these APIs are not as tightly integrated
+			into the Windows operating system, the most interesting question is
+			how the interface between the Win32 API and the cross platform API
+			is implemented, i.e., how the application programmer can obtain an
+			API-specific surface for the client area of a \texttt{HWND}.
 
 			OpenGL is officially supported by Windows. Drivers for OpenGL are
 			loaded through a mechanism called \textit{installable client
@@ -431,22 +432,22 @@
 			for a vendor-provided OpenGL driver. If such a driver is found,
 			OpenGL calls will be relayed to this driver. Otherwise, a
 			default implementation provided by Microsoft will be used. Regardless
-			of which OpenGL implementation is used, OpenGL applications first obtain
+			of which OpenGL implementation is used, Windows OpenGL applications first obtain
 			a GDI device context via \texttt{getDC(HWND)} and then pass this device
 			context to the Microsoft-provided function \texttt{wglCreateContext}
 			to obtain an OpenGL rendering context for use in the cross-platform portion
-			of the application.
+			of the application. \cite{oglrc,oglicd}
 
 			Support for graphics software written against the Vulkan API is not
-			directly built into Windows as in the OpenGL case. Instead, Khronos,
-			the working group that authored the Vulkan specification, provide
-			a loader that searches for Vulkan-compatible display drivers using
-			an installable client driver model similar to that of OpenGL. Vulkan
-			specifies a Windows-specific extension to create a Vulkan surface that
-			corresponds to the client area of a \texttt{HWND}:
-			\texttt{vkCreateWin32SurfaceKHR}. Once this surface
-			has been created, the rest of the code of a Vulkan application is
-			platform-agnostic. % Cite Vulkan spec here
+			directly built into Windows as in the OpenGL case. Instead,
+			Khronos, the working group that authored the Vulkan specification,
+			provide a loader that searches for Vulkan-compatible display
+			drivers using an installable client driver model similar to that of
+			OpenGL \cite{vulkanloader}. Vulkan specifies a Windows-specific
+			extension to create a Vulkan surface that corresponds to the client
+			area of a \texttt{HWND}: \texttt{vkCreateWin32SurfaceKHR}. Once
+			this surface has been created, the rest of the code of a Vulkan
+			application is platform-agnostic \cite{vulkanspec}.
 
 	\section{Window Management}
 		\subsection{Window managers and compositing}

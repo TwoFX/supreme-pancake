@@ -63,7 +63,7 @@
 		application over a text-based one is that in some cases, graphical
 		representations of application state give access to more intuitive and
 		better metaphors, i.e., appropriate images and icons better represent
-		the real-world situtations a computer prgram models and the ways they
+		the real-world situtations a computer program models and the ways they
 		interact than a text-based interface could.
 
 		Rigorously defining requirements for an efficient graphical user
@@ -114,7 +114,7 @@
 			In some cases, no documentation of a particular implementation detail
 			may exist for any Windows version. In this situation, the author of
 			this report used the source code of the ReactOS project in order to
-			at least present \emph{a} implementation, without intending to imply
+			at least present \emph{an} implementation, without intending to imply
 			that this implementation is similar to that of any real Windows version.
 
 	\section{Win32 GUI applications}
@@ -241,7 +241,7 @@
 			\end{tikzpicture}
 			\caption{An overview of the Windows GUI architecture, showing both user-mode
 				and kernel-mode components involved in rendering the Windows GUI. The
-				diagram assumes a machine Running Windows Vista using a Vista-ready
+				diagram assumes a machine running Windows Vista using a Vista-ready
 				GPU with appropriate drivers.}
 			\label{fig:arch}
 		\end{figure*}
@@ -275,7 +275,7 @@
 		messages to the correct window\footnote{Implementation details of the
 		RIT appear to be undocumented. The ReactOS implementation of
 		the Raw Input Thread continuously and actively polls mouse and keyboard
-		in turn. If the driver returns a new input, the recipient top-level HWND
+		in turn. If the driver returns a new input, the recipient top-level \texttt{HWND}
 		is determined. In case of keyboard input or a mouse event while the mouse
 		has been captured by an application, the active or capturing application
 		receives the message, respectively. In case of a mouse event while the
@@ -300,7 +300,7 @@
 			queue. Once the queue is full or is flushed manually by the application,
 			\texttt{gdi32} switches
 			into kernel mode and executes all queued operations
-			in sequence. Symetrically, \texttt{win32k} data which is available to the application
+			in sequence. Symmetrically, \texttt{win32k} data which is available to the application
 			is cached in user space.
 			Many (though not all) of these optimizations become unnecessary when
 			\texttt{win32k} is moved into kernel space, achieving a simpler implementation
@@ -426,7 +426,7 @@
 			into the Windows operating system, the most interesting question is
 			how the interface between the Win32 API and the cross platform API
 			is implemented, i.e., how the application programmer can obtain an
-			API-specific surface for the client area of a \texttt{HWND}.
+			API-specific surface for the client area of an \texttt{HWND}.
 
 			OpenGL is officially supported by Windows. Drivers for OpenGL are
 			loaded through a mechanism called \textit{installable client
@@ -448,7 +448,7 @@
 			drivers using an installable client driver model similar to that of
 			OpenGL \cite{vulkanloader}. Vulkan specifies a Windows-specific
 			extension to create a Vulkan surface that corresponds to the client
-			area of a \texttt{HWND}: \texttt{vkCreateWin32SurfaceKHR}. Once
+			area of an \texttt{HWND}: \texttt{vkCreateWin32SurfaceKHR}. Once
 			this surface has been created, the rest of the code of a Vulkan
 			application is platform-agnostic \cite{vulkanspec}.
 
@@ -472,7 +472,7 @@
 			straightforward to implement. However, there are drawbacks
 			to this approach.  One such drawback is that it inherently comes
 			with visual artifacts. Because window contents are drawn
-			directly on the screen without any form of dubble buffering, screen
+			directly on the screen without any form of double buffering, screen
 			tearing will be visible during high-motion events such as scrolling
 			text. Additionally, in a situation where a window is moved on top
 			of an unresponsive window and subsequently moved away, requests to
@@ -504,7 +504,7 @@
 
 			Compositing is an attempt at a solution to the aforementioned
 			problems.  If a compositing window manager is in use, applications
-			do not draw directly to the screen. Instead, each applications has
+			do not draw directly to the screen. Instead, each application has
 			its own off-screen buffer. The
 			window manager then assembles the final
 			desktop from the content of these buffers. It is immediately clear how this approach addresses the
@@ -517,12 +517,13 @@
 		\winsubsection{The Desktop Window Manager}{V}\label{sec:dwm}
 			The \emph{Desktop Window Manager} (DWM) is the compositing window
 			manager used by Windows and introduced in Longhorn
-			\cite{dwmoverview}.  It is implemented as a full-screen Direct3D
+			\cite{dwmoverview}. It is implemented as a full-screen Direct3D
 			user-space application. In particular, DWM rendering is
 			hardware-accelerated. When DWM is active, applications render into
 			off-screen DirectX buffers which are mapped onto flat surfaces in
-			3D space and rendered by the graphics hardware. This design enables
-			three-dimensionally transforming the windows, which is used for the
+			3D space and rendered by the graphics hardware. This design supports
+			applying three-dimensional transformations to windows,
+			which is used for the
 			\enquote{Flip3D} feature of Windows Vista invoked by the keyboard
 			shortcut \keys{Win+\tab} and similar features included in more
 			recent versions of Microsoft Windows. Visual effects such as
@@ -535,20 +536,20 @@
 			resembles that of an Avalon application. In particular, the desktop
 			is modeled as a visual tree in the same way that WPF applications
 			are modeled as a visual tree (refer to Section~\ref{sec:milcore}
-			for details) and also uses \texttt{milcore.dll} to render the
+			for details) and DWM also uses \texttt{milcore.dll} to render the
 			visual tree through DirectX. This code reuse provides a
 			substantial number of necessary functional and performance
 			features essentially for free.  In particular, the visual tree
 			model, which at first might appear not to fit a mostly
 			non-hierarchical situation such as the desktop very well,
 			turns out to be very beneficial, since the Avalon composition
-			engine comes with support for \emph{occlusion culling}---i.e.,
+			engine comes with support for occlusion culling---i.e.,
 			determining which parts of a window are visible at a particular
 			moment. This feature completely takes care of the task to
 			determine which parts of a window should be drawn. Similarly, the
 			entire logic that decides when to request which region of which window
-			to redraw (scheduling and dirty region management) is taken from
-			Avalon.
+			to redraw (scheduling and dirty region management) is identical to
+			its counterpart in Avalon.
 			\cite{dwmwpf}
 
 			The visual \enquote{tree} as employed by DWM allows for non-tree edges
@@ -608,14 +609,14 @@
 			GPU. \cite{dwmwddm}
 
 			One of these features is an implementation of preemption called
-			WDDM \emph{scheduling}. The granularity of preemtion depends on
+			WDDM \emph{scheduling}. The granularity of preemption depends on
 			the version of DirectX that is used and hardware support. When
 			using \emph{Basic Scheduling}, available from DirectX 9 without
 			special hardware support, primitives and shaders cannot be interrupted,
-			so preemption can only take place inbetween these basic operations.
+			so preemption can only take place in between these basic operations.
 			If the hardware supports it and DirectX 10 is in use, \emph{Advanced
 			Scheduling} is available, allowing preemption to take place in the mid
-			of primities or shaders. \cite{dwmwddm}
+			of primitives or shaders. \cite{dwmwddm}
 
 			The other large feature required for cooperative multitasking is
 			virtual memory. As GPUs may have several regions of video memory
@@ -639,7 +640,7 @@
 			display driver \cite{dwmwddm}. If no such driver is available, one
 			of two things will happen, depending on the version of Windows that
 			is running. Under Windows Vista and Windows 7, DWM will be
-			disabled\footnote{In Windows Vista and7, there are some other ways for
+			disabled\footnote{In Windows Vista and 7, there are some other ways for
 			DWM to be disabled. Applications can disable the DWM manually (for
 			example immediately before switching to full-screen mode)
 			\cite{disabledwm}, or DWM can be automatically disabled when an

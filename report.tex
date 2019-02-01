@@ -1,6 +1,12 @@
+\begin{filecontents*}{\jobname.xmpdata}
+	\Title{Windows GUI}
+	\Author{Markus Himmel}
+	\Keywords{operating systems\sep Windows\sep graphical user interfaces}
+\end{filecontents*}
+
 \RequirePackage[l2tabu,orthodox]{nag}
 \documentclass[10pt,twocolumn,a4paper]{article}
-
+\usepackage[a-1b]{pdfx}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
@@ -23,7 +29,8 @@
 
 \usepackage[os=win]{menukeys}
 
-\usepackage[hidelinks]{hyperref}
+\hypersetup{hidelinks,pdfencoding=unicode}
+\usepackage[all]{hypcap}
 
 \author{Markus Himmel}
 \title{Windows GUI}

@@ -189,20 +189,32 @@
 			the applications calls when it receives a window message
 			for a window object from the kernel is called
 			\textit{window procedure} and is part of the window class, i.e., when
-			registering a window class, application developers must provide a pointer to the window procedure for the
-			window class. The window
+			registering a window class, application developers must provide a
+			pointer to the window procedure for the window class. The window
 			procedure requires four parameters: The \texttt{HWND} of the window
 			object that received the window message, a numeric code detailing the
 			type of the message received, and two parameters for the message.
 			\cite{aboutwinproc}
 
 			A window procedure handles some of the messages it receives.
-			Typical types of messages are requests to repaint some
-			region of the window, notifications about user input, or the notification
+			Typical types of messages are requests to repaint some region of
+			the window, notifications about user input, or the notification
 			that the application is about to exit. If a message is not handled
-			by the window procedure, the window procedure must call \texttt{DefWindowProc},
-			resulting in execution of a default window procedure to ensure that
-			all messages are handled. \cite{aboutwinproc} % TODO: What if not?
+			by the window procedure, the window procedure must call
+			\texttt{DefWindowProc}, resulting in execution of a default window
+			procedure to ensure that all messages are handled
+			\cite{aboutwinproc}. If the window procedure does not call the
+			default procedure, it has to implement the functionality of the
+			default window procedure itself in order for the graphical user
+			interface to work. For example, when the application calls
+			\texttt{CreateWindow},
+			the window procedure receives a \texttt{WM\_NCCREATE}
+			message \cite{createwindow}. This message expects the window procedure
+			to return a non-zero value if creation of the window should continue
+			\cite{wmnccreate},
+			so if the default window procedure is not called the window procedure
+			must specifically handle this message, otherwise \texttt{CreateWindow}
+			returns a \texttt{NULL} \texttt{HWND}.
 
 			In order to support this message-driven mode of operation, the main
 			thread of every Windows GUI application is required to execute a

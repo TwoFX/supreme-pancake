@@ -457,45 +457,66 @@
 		\cite{probertwin32k}
 
 		\winsubsection{Moving \texttt{win32k} to the Kernel}{NT4}
-			It is possible to provide the functionality described in Section~\ref{sec:win32k}
-			using a user-space module. Even further, proper microkernel design principles
-			mandate that \texttt{win32k} \emph{must} be placed in user space, because
-			it is not inherently reliant on kernel-mode functionality.
-			In fact, Windows versions prior to Windows NT 4.0
-			do implement \texttt{win32k} functionality in user space. However,
-			in Windows NT 4.0 \texttt{win32k} was moved to kernel space for
-			performance reasons. Windows NT 3.51 contains a large number of optimizations
-			to be able to support a user-space \texttt{win32k}, many of them related
-			to efficient execution of GDI operations (see Section~\ref{sec:gdi}).
+			It is possible to provide the functionality described in
+			Section~\ref{sec:win32k} using a user-space module. Even further,
+			proper microkernel design principles mandate that \texttt{win32k}
+			\emph{must} be placed in user space, because it is not inherently
+			reliant on kernel-mode functionality.  In fact, Windows versions
+			prior to Windows NT 4.0 do implement \texttt{win32k} functionality
+			in user space by having applications communicate with the
+			user-space \textit{Client-Server Subsystem} (CSRSS) which contains
+			\texttt{win32k} and communicates with the kernel for low-level
+			operations such as calls to the graphics hardware. Note the
+			additional layer of indirection compared to other operating system
+			interfaces, where applications make system calls directly
+			\cite{gdikernel}.
+
+			In Windows NT 4.0 \texttt{win32k} was moved to kernel space for
+			performance reasons \cite{gdikernel}. Performance problems with the
+			CSRSS approach stem from both the fact that inter-process
+			communication has to be employed by applications in order to
+			communicate with CSRSS and the need for memory to be shared across
+			the kernel mode boundary for CSRSS to provide its functionality
+			\cite{gdikernel}. On a typical machine running Windows NT 4.0, a
+			kernel-mode transition was measured to take four to five
+			milliseconds, compared to 60 to 70 milliseconds for an
+			inter-process call to CSRSS \cite{gdikernel}.
+
+			Windows NT 3.51 contains a large number of optimizations to be able
+			to support a user-space \texttt{win32k}, many of them related to
+			efficient execution of GDI operations (see Section~\ref{sec:gdi}).
 			For example, GDI operations requested by the applications are not
-			actually drawn immediately by calling into the kernel and communicating
-			with the graphics hardware. Instead, GDI operations are placed in a
-			queue. Once the queue is full or is flushed manually by the application,
-			\texttt{gdi32} switches
-			into kernel mode and executes all queued operations
-			in sequence. Symmetrically, \texttt{win32k} data which is available to the application
-			is cached in user space.
-			Many (though not all) of these optimizations become unnecessary when
-			\texttt{win32k} is moved into kernel space, achieving a simpler implementation
-			with improved performance.
-			\cite{gdikernel} % TODO: Clarify the improvements
+			actually drawn immediately by calling into CSRSS. Instead, GDI
+			operations are placed in a queue. Once the queue is full or is
+			flushed manually by the application, \texttt{gdi32} communicates
+			with CSRSS and executes all queued operations in sequence.
+			Symmetrically, \texttt{win32k} data which is available to the
+			application is cached by the application \cite{gdikernel}.
 
-			The architectural justification for this change is that the subsystem
-			retains its microkernel-like interface while providing significantly
-			improved performance. This style of kernel architecture is referred
-			to as \emph{modified microkernel}. \cite{gdikernel}
+			Moving \texttt{win32k} to the kernel eliminates the indirection of
+			the client/server approach, which saves both processor time lost
+			performing client/server transitions and the overhead associated
+			with sharing memory. In order to limit the amount of required
+			kernel-mode transitions, a limited degree of batching is still
+			performed \cite{gdikernel}.
 
-			Moving \texttt{win32k} from user mode to kernel mode without fundamentally
-			adapting its architecture---which would be very challenging due to
-			compatibility---has created an entire class of security problems.
-			In several situations arising in the context of \texttt{win32k},
-			calling back from the kernel into user-mode code (rather than just
-			returning) is necessary. In order to facilitate this, \texttt{win32k}
-			provides a mechanism called \textit{user-mode callbacks}. This
-			functionality has shown to be very prone to creating security problems,
-			such as information leakage or transitioning back into user mode after
-			a different code execution vulnerability has already been exploited.
-			\cite{mandy2011kernel}
+			The architectural justification for this change is that the
+			subsystem retains its microkernel-like interface while providing
+			significantly improved performance. This style of kernel
+			architecture is referred to as \emph{modified microkernel}.
+			\cite{gdikernel}
+
+			Moving \texttt{win32k} from user mode to kernel mode without
+			fundamentally adapting its architecture---which would be very
+			challenging due to compatibility---has created an entire class of
+			security problems.  In several situations arising in the context of
+			\texttt{win32k}, calling back from the kernel into user-mode code
+			(rather than just returning) is necessary. In order to facilitate
+			this, \texttt{win32k} provides a mechanism called \textit{user-mode
+			callbacks}. This functionality has shown to be very prone to
+			creating security problems, such as information leakage or
+			transitioning back into user mode after a different code execution
+			vulnerability has already been exploited.  \cite{mandy2011kernel}
 
 	\section{Window Management}\label{sec:wm}
 			The window manager is the component of a window-based graphical user

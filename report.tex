@@ -379,16 +379,20 @@
 			\cite{goingdeep}
 
 		\subsection{Cross-platform Graphics APIs}
-			% TODO: Why cross-platform?
-			Beside the essentially Windows-specific DirectX API, there are several
-			cross-platform APIs that aim to fill a similar niche\footnote{Notably,
-			DirectX does not fill a single niche. In particular,
-			different versions of the DirectX API emphasize different usage models.
-			DirectX version 11 and before are most comparable to OpenGL in being
-			relatively high-level. In contrast, DirectX 12 is more low-level and
-			thus similar to Vulkan.}. Of these, two are available on Windows: OpenGL
-			and Vulkan, an API for low-level access to graphics hardware
-			\cite[3]{vulkanspec}. Since, unlike DirectX, these APIs are not as tightly integrated
+			Beside the essentially Windows-specific DirectX API, there are
+			several cross-platform APIs that aim to fill a similar
+			niche\footnote{Notably, DirectX does not fill a single niche. In
+			particular, different versions of the DirectX API emphasize
+			different usage models.  DirectX version 11 and before are most
+			comparable to OpenGL in being relatively high-level. In contrast,
+			DirectX 12 is more low-level and thus similar to Vulkan.}.
+			Targeting cross-platform APIs instead of DirectX enables running
+			software on different platforms and operating systems with minimal
+			adjustments, which makes the application available to a larger
+			audience. Of these, two are available on Windows: OpenGL and
+			Vulkan, an API for low-level access to graphics hardware
+			\cite[3]{vulkanspec}. Since, unlike DirectX, these APIs are not as
+			tightly integrated
 			into the Windows operating system, the most interesting question is
 			how the interface between the Win32 API and the cross platform API
 			is implemented, i.e., how the application programmer can obtain an
@@ -401,10 +405,11 @@
 			for a vendor-provided OpenGL driver. If such a driver is found,
 			OpenGL calls are relayed to this driver. Otherwise, a
 			default implementation provided by Microsoft is used. Regardless
-			of which OpenGL implementation is used, Windows OpenGL applications first obtain
-			a GDI device context via the standard GDI function \texttt{getDC(HWND)} and then pass this device
-			context to the Microsoft-provided function \texttt{wglCreateContext}
-			to obtain an OpenGL rendering context for use in the cross-platform portion
+			of which OpenGL implementation is used, Windows OpenGL applications
+			first obtain a GDI device context via the standard GDI function
+			\texttt{getDC(HWND)} and then pass this device context to the
+			Microsoft-provided function \texttt{wglCreateContext} to obtain an
+			OpenGL rendering context for use in the cross-platform portion
 			of the application. \cite{oglrc,oglicd}
 
 			Support for graphics software that uses the Vulkan API is not
@@ -628,7 +633,8 @@
 			magnified buffer\footnote{In addition, special care is taken by the
 			application
 			that this virtual edge is not traversed once again, which would result
-			in an unwanted instance of the Droste effect.}. % TODO: Reference
+			in an unwanted instance of the Droste effect, i.e., the scaled region
+			of the screen recursively appearing within itself.}.
 			For most applications, this means that the pixels are scaled up naïvely.
 			However, Avalon applications come with special support for magnification,
 			resulting in a pixel-perfect magnified presentation. This support
@@ -704,21 +710,21 @@
 
 			The desktop window manager cannot run without a WDDM-compliant
 			display driver \cite{dwmwddm}. If no such driver is available,
-			\texttt{win32k} \cite{probertwin32k} performs one of two actions, depending on the version of Windows that
-			is running. Under Windows Vista and Windows 7, DWM is
-			disabled\footnote{In Windows Vista and 7, there are some other ways for
-			DWM to be disabled. Applications can disable the DWM manually (for
-			example immediately before switching to full-screen mode)
-			\cite{disabledwm}. Furthermore, DWM shuts down if an application
-			bypasses compositing and instead draws directly to the screen
-			\cite{dwmredirect}.}
-			and the non-compositing window manager\footnote{Contrary to the DWM,
-			the non-compositing window manager referred to as \textit{USER} resides
-			in \texttt{win32k} and thus in kernel space \cite{probertwin32k}.}
-			from Windows XP is used. When running Windows 8 or later,
-			the DWM runs, but a software-based renderer called
-			\textit{Microsoft Basic Display Adapter} serves as a replacement
-			for the display driver \cite{dwmalwayson}.
+			\texttt{win32k} \cite{probertwin32k} performs one of two actions,
+			depending on the version of Windows that is running. Under Windows
+			Vista and Windows 7, DWM is disabled\footnote{In Windows Vista and
+			7, there are some other ways for DWM to be disabled. Applications
+			can disable the DWM manually (for example immediately before
+			switching to full-screen mode) \cite{disabledwm}. Furthermore, DWM
+			shuts down if an application bypasses compositing and instead draws
+			directly to the screen \cite{dwmredirect}.} and the non-compositing
+			window manager\footnote{Contrary to the DWM, the non-compositing
+			window manager referred to as \textit{USER} resides in
+			\texttt{win32k} and thus in kernel space \cite{probertwin32k}.}
+			from Windows XP is used. When running Windows 8 or later, the DWM
+			runs, but a software-based renderer called \textit{Microsoft Basic
+			Display Adapter} serves as a replacement for the display driver
+			\cite{dwmalwayson}.
 
 			From a GPU driver developer's point of view, a WDDM driver consists
 			of a \textit{user-mode display driver} (also referred to as
@@ -752,7 +758,7 @@
 			\cite{win7}
 
 	\section{Conclusion}
-		%TODO: Write
+		% TODO: Write
 
 	\onecolumn{\printbibliography}
 \end{document}

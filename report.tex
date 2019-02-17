@@ -60,7 +60,7 @@
 	\section{Introduction}
 		A \textit{graphical user interface} (GUI) is a means of communicating
 		with an electronic device such as a personal computer that uses graphical
-		icons and other visual indicators to represent application state. In
+		icons and other visual elements to represent application state. In
 		contrast, classical command-line interfaces represent program state to
 		the user using text-based representations. In addition, when a GUI is
 		in use, the user is able to manipulate application elements using graphical
@@ -163,8 +163,8 @@
 			area} consists of the frame of the window, including the title bar and
 			controls like the close button. It is drawn by the operating system.
 			The \textit{client area} is the part of the window that is drawn by
-			the application itself.
-			\cite{whatiswindow}
+			the application itself
+			\cite{whatiswindow}.
 
 			Each window object is an instance of a given \textit{window class} \cite{creatingwindow}.
 			Window classes, while conceptually comparable, are not classes in
@@ -178,21 +178,20 @@
 			The type of the handle is \texttt{HWND} \cite{whatiswindow}. This type is opaque to the
 			application developer. Functions that in some way operate on a
 			window object take the \texttt{HWND} as a parameter.
-			\cite{creatingwindow,whatiswindow}
 
 		\subsection{Window Messages and Procedures}
 			Window classes determine the behavior of window objects \cite{creatingwindow}. The mechanism
 			through which window object behavior is defined is the reaction of
 			a window object to messages sent to the object. The callback that
-			the applications calls when it receives a window message
+			the application calls when it receives a window message
 			for a window object from the kernel is called
 			\textit{window procedure} \cite{aboutwinproc} and is part of the window class, i.e., when
 			registering a window class, application developers must provide a
 			pointer to the window procedure for the window class. The window
 			procedure requires four parameters: The \texttt{HWND} of the window
 			object that received the window message, a numeric code detailing the
-			type of the message received, and two parameters for the message.
-			\cite{aboutwinproc}
+			type of the message received, and two parameters for the message
+			\cite{aboutwinproc}.
 
 			A window procedure handles some of the messages it receives.
 			Typical types of messages are requests to repaint some region of
@@ -219,23 +218,23 @@
 			message loop immediately after creating the main application
 			window\footnote{In particular, creation of components on the main
 			window is performed in the message handler for the
-			\texttt{WM\_CREATE} message, so the main application window does
+			\texttt{WM\_CREATE} message \cite{usingwindows}, so the main application window does
 			not display any controls or content before the main thread enters
 			the message loop.} \cite{messages}. Applications may fetch the next message in the
 			queue using \texttt{GetMessage}. The application then has to pass
 			the message first to \texttt{TranslateMessage} and then to
-			\texttt{DispatchMessage}. \texttt{TranslateMessage} translates key
+			\texttt{DispatchMessage} \cite{usingwindows}. \texttt{TranslateMessage} translates key
 			code messages returned by the keyboard driver into Unicode
 			characters according to the current keyboard layout and posts new
-			messages with these characters to the application. This is a step performed
+			messages with these characters to the application \cite{translatemessage}. This is a step performed
 			by the application itself instead of the operating system because
 			there are some cases where an application wants to process the virtual
 			key codes instead of the mapped ones \cite{translatemessage} and because the current keyboard
 			layout depends on the current thread, so the kernel thread generating
 			the messages is by itself unable to map virtual key codes to actual
 			key codes\winver{ROS}. \texttt{DispatchMessage} then invokes the window procedure
-			of the window object the message was posted to. The target \texttt{HWND}
-			is part of the message record fetched by \texttt{GetMessage}. \cite{messages}
+			of the window object the message was posted to \cite{dispatchmessage}. The target \texttt{HWND}
+			is part of the message record fetched by \texttt{GetMessage} \cite{msgstruct}.
 
 
 	\section{Win32 Drawing APIs}\label{sec:win32drawing}
@@ -302,15 +301,15 @@
 			primitives \cite{d2dvsgdi}. When the DDI was created, hardware that is able to
 			accelerate the specific operations used in GDI existed, but modern GPUs operate
 			very differently and cannot provide hardware acceleration. As such,
-			GDI operations always run on the CPU on Windows Vista. \cite{d2dvsgdi}
+			GDI operations always run on the CPU on Windows Vista \cite{d2dvsgdi}.
 
 			GDI functions are provided by the user space module
 			\texttt{gdi32.dll} which in turn calls into the GDI kernel residing
 			in \texttt{win32k.sys} \cite{d2dvsgdi}. The GDI kernel communicates with the
 			system's DDI driver. Windows Vista only supports a single DDI driver,
-			the \textit{Canonical Display Driver}, which renders requested operations
-			into a buffer located in main memory. Refer to Figure~\ref{fig:arch}
-			for an overview. \cite{d2dvsgdi, dwmredirect}
+			the \textit{Canonical Display Driver} \cite{d2dvsgdi}, which renders requested operations
+			into a buffer located in main memory \cite{dwmredirect}. Refer to Figure~\ref{fig:arch}
+			for an overview.
 
 		\subsection{DirectX}
 			Microsoft \textit{DirectX} is a collection of APIs exposing functionality of
@@ -318,7 +317,8 @@
 			multimedia applications such as video playback and video games, it
 			is now also used for regular GUI applications and multiple specific
 			APIs have been added to the collection over the years to further
-			facilitate this use case, with the intention to replace GDI \cite{aboutd2d}.
+			facilitate this use case, with the intention to ultimately replace GDI, at
+			least for new applications \cite{aboutd2d}.
 			Unlike GDI applications, DirectX applications
 			are rendered by the GPU into video memory \cite{d2dvsgdi}.
 
@@ -361,19 +361,17 @@
 			via a rendering thread running on a client. Since both client and
 			server maintain the visual tree, updates in the user interface can
 			efficiently be communicated to the client using deltas to the visual
-			tree.
-			\cite{goingdeep}
+			tree \cite{goingdeep}.
 
 			When the rendering thread is notified of a change to the visual tree,
 			it updates the application on the screen. This step is performed by
 			traversing the visual tree and drawing each component of the tree.
 			However, if rendering occurs in response to a change to the visual
-			tree, not the entire visual tree is redrawn. Instead, \texttt{milcore}
+			tree, not the entire visual tree is redrawn \cite{goingdeep}. Instead, \texttt{milcore}
 			employs dirty region management and occlusion culling---i.e.,
 			determining which elements of the tree are visible at a particular
 			moment. These optimizations ensure that no unnecessary rendering takes
-			place.
-			\cite{goingdeep}
+			place \cite{goingdeep}.
 
 		\subsection{Cross-platform Graphics APIs}
 			Beside the essentially Windows-specific DirectX API, there are
@@ -412,7 +410,7 @@
 			Support for graphics software that uses the Vulkan API is not
 			directly built into Windows as in the OpenGL case. Instead,
 			Khronos, the working group that authored the Vulkan specification,
-			provide a loader that searches for Vulkan-compatible display
+			provides a loader that searches for Vulkan-compatible display
 			drivers using an installable client driver model similar to that of
 			OpenGL \cite{vulkanloader}. Vulkan specifies a Windows-specific
 			extension to create a Vulkan surface that corresponds to the client
@@ -484,7 +482,7 @@
 			Windows NT 3.51 contains a large number of optimizations to be able
 			to support a user-space \texttt{win32k}, many of them related to
 			efficient execution of GDI operations (see Section~\ref{sec:gdi}).
-			For example, GDI operations requested by the applications are not
+			For example, GDI operations requested by the application are not
 			actually drawn immediately by calling into CSRSS. Instead, GDI
 			operations are placed in a queue. Once the queue is full or is
 			flushed manually by the application, \texttt{gdi32} communicates
@@ -502,8 +500,8 @@
 			The architectural justification for this change is that the
 			subsystem retains its microkernel-like interface while providing
 			significantly improved performance. This style of kernel
-			architecture is referred to as \emph{modified microkernel}.
-			\cite{gdikernel}
+			architecture is referred to as \emph{modified microkernel}
+			\cite{gdikernel}.
 
 			Moving \texttt{win32k} from user mode to kernel mode without
 			fundamentally adapting its architecture---which would be very
@@ -679,7 +677,7 @@
 			special hardware support, primitives and shaders cannot be interrupted,
 			so preemption can only take place in between these basic operations.
 			If the hardware supports it and DirectX 10 is in use, \emph{advanced
-			scheduling} is available, allowing preemption to take place in the mid
+			scheduling} is available, allowing preemption to take place in the middle
 			of primitives or shaders \cite{dwmwddm}.
 
 			The other large feature required for cooperative multitasking is
@@ -725,7 +723,7 @@
 			display driver} \cite{wddmarch}. Both components are solely concerned with handling
 			DirectX operations---calls to all other types of graphics API that
 			are available on Windows, notably including OpenGL in case the driver
-			vendor chooses not to provide direct implementation of OpenGL via
+			vendor chooses not to provide a direct implementation of OpenGL via
 			an installable client driver, are either not
 			hardware-accelerated or relayed to the appropriate DirectX commands
 			\cite{d2dvsgdi}.

@@ -40,8 +40,6 @@
 \newcommand{\winsection}[2]{\section{#1\winver{#2}}[#1]}
 \newcommand{\winsubsection}[2]{\subsection[#1]{#1\winver{#2}}}
 
-% TODO: Move citations
-
 \begin{document}
 	\maketitle
 
@@ -155,7 +153,7 @@
 
 		\subsection{Window Classes and Objects}
 			The fundamental building block of a Windows GUI application is the
-			\textit{window object}, typically just referred to as \textit{window}.
+			\textit{window object}, typically just referred to as \textit{window} \cite{whatiswindow}.
 			Window objects are not only windows in the colloquial sense, but also
 			most types of controls found inside application windows, such as buttons
 			or text boxes. Windows are organized in a hierarchical structure.
@@ -168,7 +166,7 @@
 			the application itself.
 			\cite{whatiswindow}
 
-			Each window object is an instance of a given \textit{window class}.
+			Each window object is an instance of a given \textit{window class} \cite{creatingwindow}.
 			Window classes, while conceptually comparable, are not classes in
 			the object-oriented programming sense. Instead, windows classes are
 			registered with the kernel at runtime and can then be instantiated.
@@ -177,18 +175,18 @@
 			using the function
 			\texttt{CreateWindowEx}, which requires the name of the window class
 			to instantiate and returns a handle to the newly created window.
-			The type of the handle is \texttt{HWND}. This type is opaque to the
+			The type of the handle is \texttt{HWND} \cite{whatiswindow}. This type is opaque to the
 			application developer. Functions that in some way operate on a
 			window object take the \texttt{HWND} as a parameter.
 			\cite{creatingwindow,whatiswindow}
 
 		\subsection{Window Messages and Procedures}
-			Window classes determine the behavior of window objects. The mechanism
+			Window classes determine the behavior of window objects \cite{creatingwindow}. The mechanism
 			through which window object behavior is defined is the reaction of
 			a window object to messages sent to the object. The callback that
 			the applications calls when it receives a window message
 			for a window object from the kernel is called
-			\textit{window procedure} and is part of the window class, i.e., when
+			\textit{window procedure} \cite{aboutwinproc} and is part of the window class, i.e., when
 			registering a window class, application developers must provide a
 			pointer to the window procedure for the window class. The window
 			procedure requires four parameters: The \texttt{HWND} of the window
@@ -223,7 +221,7 @@
 			window is performed in the message handler for the
 			\texttt{WM\_CREATE} message, so the main application window does
 			not display any controls or content before the main thread enters
-			the message loop.}. Applications may fetch the next message in the
+			the message loop.} \cite{messages}. Applications may fetch the next message in the
 			queue using \texttt{GetMessage}. The application then has to pass
 			the message first to \texttt{TranslateMessage} and then to
 			\texttt{DispatchMessage}. \texttt{TranslateMessage} translates key
@@ -301,14 +299,14 @@
 			designed to operate using the CPU and supports its own driver model
 			for hardware acceleration called \textit{GDI Device Driver
 			Interface} (DDI) specifically for accelerating GDI
-			primitives. When the DDI was created, hardware that is able to
+			primitives \cite{d2dvsgdi}. When the DDI was created, hardware that is able to
 			accelerate the specific operations used in GDI existed, but modern GPUs operate
 			very differently and cannot provide hardware acceleration. As such,
 			GDI operations always run on the CPU on Windows Vista. \cite{d2dvsgdi}
 
 			GDI functions are provided by the user space module
 			\texttt{gdi32.dll} which in turn calls into the GDI kernel residing
-			in \texttt{win32k.sys}. The GDI kernel communicates with the
+			in \texttt{win32k.sys} \cite{d2dvsgdi}. The GDI kernel communicates with the
 			system's DDI driver. Windows Vista only supports a single DDI driver,
 			the \textit{Canonical Display Driver}, which renders requested operations
 			into a buffer located in main memory. Refer to Figure~\ref{fig:arch}
@@ -320,14 +318,14 @@
 			multimedia applications such as video playback and video games, it
 			is now also used for regular GUI applications and multiple specific
 			APIs have been added to the collection over the years to further
-			facilitate this use case, with the intention to replace GDI.
+			facilitate this use case, with the intention to replace GDI \cite{aboutd2d}.
 			Unlike GDI applications, DirectX applications
-			are rendered by the GPU into video memory. \cite{d2dvsgdi,aboutd2d}
+			are rendered by the GPU into video memory \cite{d2dvsgdi}.
 
 			In the context of graphics programming, the most fundamental part of
 			DirectX is Direct3D, which provides support for 3D graphics. The
 			APIs tailored towards traditional GUI developers, Direct2D and
-			DirectWrite, are implemented on top of Direct3D. \cite{aboutd2d}
+			DirectWrite, are implemented on top of Direct3D \cite{aboutd2d}.
 
 		\winsubsection{Avalon}{V}\label{sec:milcore}
 			Unlike GDI and DirectX, \textit{Avalon}, also known as \textit{Windows Presentation
@@ -338,8 +336,8 @@
 			Language Runtime} (CLR) is a runtime system comparable to the Java Virtual
 			Machine. It runs \textit{Common Intermediate Language} (CIL) bytecode.
 			The most well-known programming language targeting the CLR is Microsoft
-			C\#.} applications. Avalon is
-			implemented on top of DirectX. The major rendering work is performed
+			C\#.} applications \cite{goingdeep}. Avalon is
+			implemented on top of DirectX \cite{dwmwpf}. The major rendering work is performed
 			by a native module called \texttt{milcore.dll} (where MIL is short for
 			\textit{Media Integration Layer}). Avalon applications maintain a
 			so-called \textit{visual tree} on their UI thread\footnote{An
@@ -348,11 +346,10 @@
 			for interoperability reasons \cite{goingdeep}.} which represents the
 			client area of the application. An unmanaged portion of the UI thread
 			code then communicates the visual tree to a \texttt{milcore}-provided
-			rendering thread which keeps its own copy of the tree. In some situations,
+			rendering thread which keeps its own copy of the tree \cite{goingdeep}. In some situations,
 			raw image data is shared between the UI thread and the rendering thread. The
 			rendering thread then walks the visual tree and issues the correct
-			DirectX commands to draw the application.
-			\cite{goingdeep,dwmwpf}
+			DirectX commands to draw the application \cite{goingdeep}.
 
 			Decoupling the UI thread from the rendering thread comes with
 			advantages. Not having to wait for rendering to finish before being
@@ -400,17 +397,17 @@
 
 			OpenGL is officially supported by Windows. Drivers for OpenGL are
 			loaded through a mechanism called \textit{installable client
-			drivers} (ICDs). Microsoft provides a module called
+			drivers} (ICDs) \cite{oglicd}. Microsoft provides a module called
 			\texttt{opengl32.dll} which checks a specific registry key
 			for a vendor-provided OpenGL driver. If such a driver is found,
 			OpenGL calls are relayed to this driver. Otherwise, a
-			default implementation provided by Microsoft is used. Regardless
+			default implementation provided by Microsoft is used \cite{oglcomp}. Regardless
 			of which OpenGL implementation is used, Windows OpenGL applications
 			first obtain a GDI device context via the standard GDI function
 			\texttt{getDC(HWND)} and then pass this device context to the
 			Microsoft-provided function \texttt{wglCreateContext} to obtain an
 			OpenGL rendering context for use in the cross-platform portion
-			of the application. \cite{oglrc,oglicd}
+			of the application \cite{oglrc}.
 
 			Support for graphics software that uses the Vulkan API is not
 			directly built into Windows as in the OpenGL case. Instead,
@@ -427,26 +424,24 @@
 		The functions available to the user for creating GUI applications are
 		exported by \texttt{user32.dll}, which is a user-space library.
 		However, the actual functionality is provided by a kernel module called
-		\texttt{win32k.sys}. Refer to Figure~\ref{fig:arch} for an overview over the
-		components involved in the Windows graphical user interface. \cite{probertwin32k}
+		\texttt{win32k.sys} \cite{probertwin32k}. Refer to Figure~\ref{fig:arch} for an overview over the
+		components involved in the Windows graphical user interface.
 
 		\texttt{win32k} maintains a list of all active GUI threads of the
 		current session. A GUI thread is somewhat circularly defined as a
-		thread that is known to \texttt{win32k} as a GUI thread. Upon creation,
+		thread that is known to \texttt{win32k} as a GUI thread \cite{probertwin32k}. Upon creation,
 		a thread is not a GUI thread. A thread is promoted to a GUI thread when
 		it first calls into \texttt{win32k}, for example when calling
 		\texttt{CreateWindowEx} from \texttt{user32.dll}. After a thread is
 		promoted, \texttt{win32k} becomes aware of the thread (and in
-		particular, is notified of its destruction). In addition, the thread
+		particular, is notified of its destruction \cite{probertwin32k}). In addition, the thread
 		receives a bigger kernel stack, because \texttt{win32k} call chains
 		can become rather deep and some specific mechanisms employed by \texttt{win32k}
-		require extra stack space.
-		\cite{probertwin32k,mandy2011kernel}
+		require extra stack space \cite{mandy2011kernel}.
 
 		Besides managing GUI threads, \texttt{win32k} contains the kernel portion
-		of window management. It responds to requests to create and close windows
-		and keeps a list of all top-level windows of the window station.
-		\cite{probertwin32k,goingdeep}
+		of window management \cite{probertwin32k}. It responds to requests to create and close windows
+		and keeps a list of all top-level windows of the window station \cite{goingdeep}.
 
 		Another major responsibility of \texttt{win32k} is the \textit{raw input
 		thread} (RIT). The raw input thread is responsible for receiving user input and posting
@@ -458,8 +453,7 @@
 		has been captured by an application, the active or capturing application
 		receives the message, respectively. In case of a mouse event while the
 		mouse is not caputured, all top-level windows are enumerated and the
-		window the mouse is above is selected.\winver{ROS}}.
-		\cite{probertwin32k}
+		window the mouse is above is selected.\winver{ROS}} \cite{probertwin32k}.
 
 		\winsubsection{Moving \texttt{win32k} to the Kernel}{NT4}
 			It is possible to provide the functionality described in
@@ -514,14 +508,14 @@
 			Moving \texttt{win32k} from user mode to kernel mode without
 			fundamentally adapting its architecture---which would be very
 			challenging due to compatibility---has created an entire class of
-			security problems.  In several situations arising in the context of
+			security problems \cite{mandy2011kernel}.  In several situations arising in the context of
 			\texttt{win32k}, calling back from the kernel into user-mode code
 			(rather than just returning) is necessary. In order to facilitate
 			this, \texttt{win32k} provides a mechanism called \textit{user-mode
 			callbacks}. This functionality has shown to be very prone to
 			creating security problems, such as information leakage or
 			transitioning back into user mode after a different code execution
-			vulnerability has already been exploited.  \cite{mandy2011kernel}
+			vulnerability has already been exploited \cite{mandy2011kernel}.
 
 	\section{Window Management}\label{sec:wm}
 			The window manager is the component of a window-based graphical user
@@ -583,13 +577,13 @@
 			easy to perform double buffering and even when a window is not
 			responding, the window manager knows its last good state and can
 			use it to prevent trails. Furthermore, visual effects are trivial
-			to achieve when compositing is used. \cite{dwmoverview}
+			to achieve when compositing is used \cite{dwmoverview}.
 
 		\winsubsection{The Desktop Window Manager}{V}\label{sec:dwm}
 			The \emph{Desktop Window Manager} (DWM) is the compositing window
 			manager used by Windows and introduced in Longhorn
 			\cite{dwmoverview}. It is implemented as a full-screen Direct3D
-			user-space application. In particular, DWM rendering is
+			user-space application \cite{dwmdirectx}. In particular, DWM rendering is
 			hardware-accelerated. When DWM is active, applications render into
 			off-screen DirectX buffers which are mapped onto flat surfaces in
 			3D space and rendered by the graphics hardware. This design supports
@@ -600,17 +594,16 @@
 			recent versions of Microsoft Windows. Visual effects such as
 			transparency are implemented using DirectX pixel shaders. In addition,
 			double buffering is implemented using a buffer flipping mechanism
-			native to DirectX.
-			\cite{dwmdirectx}
+			native to DirectX \cite{dwmdirectx}.
 
 			Even though DWM is a native application, its implementation closely
-			resembles that of an Avalon application. In particular, the desktop
+			resembles that of an Avalon application \cite{dwmwpf}. In particular, the desktop
 			is modeled as a visual tree in the same way that WPF applications
 			are modeled as a visual tree (refer to Section~\ref{sec:milcore}
 			for details) and DWM also uses \texttt{milcore.dll} to render the
-			visual tree through DirectX. This code reuse provides a
+			visual tree through DirectX \cite{goingdeep}. This code reuse provides a
 			substantial number of necessary functional and performance
-			features essentially for free.  In particular, the visual tree
+			features essentially for free \cite{dwmwpf}.  In particular, the visual tree
 			model, which at first might appear not to fit a mostly
 			non-hierarchical situation such as the desktop very well,
 			turns out to be very beneficial, since the Avalon composition
@@ -620,12 +613,11 @@
 			determine which parts of a window should be redrawn. Similarly, the
 			entire logic that decides when to request which region of which window
 			to redraw (scheduling and dirty region management) is identical to
-			its counterpart in Avalon.
-			\cite{dwmwpf}
+			its counterpart in Avalon \cite{dwmwpf}.
 
 			The visual \enquote{tree} as employed by DWM allows for non-tree edges
 			in order to render windows at locations different from their \enquote{actual}
-			position. This feature is used to implement thumbnails and previews.
+			position \cite{goingdeep}. This feature is used to implement thumbnails and previews.
 			Another use of this feature is the \enquote{magnifier} accessibility
 			feature, which renders a portion of a screen in a larger region.
 			It is implemented by additionally applying a transform to the entire
@@ -634,14 +626,14 @@
 			application
 			that this virtual edge is not traversed once again, which would result
 			in an unwanted instance of the Droste effect, i.e., the scaled region
-			of the screen recursively appearing within itself.}.
+			of the screen recursively appearing within itself
+			\cite{goingdeep}.} \cite{goingdeep}.
 			For most applications, this means that the pixels are scaled up naïvely.
 			However, Avalon applications come with special support for magnification,
 			resulting in a pixel-perfect magnified presentation. This support
 			is enabled by specific handling in Avalon---in particular, the DWM's
 			visual tree does \emph{not} have access to the visual tree of an
-			Avalon application.
-			\cite{goingdeep}
+			Avalon application \cite{goingdeep}.
 
 			The way in which windows are redirected when DWM is in use depends
 			on the drawing API used by the application. GUI applications which
@@ -650,63 +642,63 @@
 			in video memory allocated
 			by the DWM. Because DWM itself uses DirectX, DirectX applications
 			natively render into the format used by DWM, so the DWM can use
-			these buffers directly to perform composition.
-			\cite{dwmredirect}
+			these buffers directly to perform composition
+			\cite{dwmredirect}.
 
 			Applications employing GDI for their rendering cannot render into
 			the DirectX pixel format, but render into a DWM-provided main memory
-			buffer in their native GDI format. When the window is created, DWM
+			buffer in their native GDI format \cite{goingdeep}. When the window is created, DWM
 			automatically also creates a DirectX buffer in video memory. The
 			application draws into the GDI buffer, and DWM manually transcribes
 			the GDI buffer to the DirectX buffer when necessary and uses the result
-			for composition.
-			\cite{dwmredirect}
+			for composition
+			\cite{dwmredirect}.
 
 		\winsubsection{The Windows Display Driver Mo\-del}{V}\label{sec:wddm}
 			The implementation of DWM described in Section~\ref{sec:dwm}
 			fundamentally relies on graphics driver support in order to achieve
-			acceptable performance.  Prior to Longhorn, DirectX applications
+			acceptable performance \cite{dwmwddm}.  Prior to Longhorn, DirectX applications
 			assumed that they have exclusive access to the GPU. In particular,
 			there was no virtual memory and no support for preemption. This is
 			unproblematic as long as there is at most one active DirectX application
-			and that application has predictable video memory requirements.
+			and that application has predictable video memory requirements \cite{dwmwddm}.
 			However, the Desktop Window Manager \emph{is} a DirectX appliction that
 			by design both runs alongside other DirectX applications and whose
 			memory consumption is dependent on the number of open windows and therefore
 			unpredictable.
 			In order to address these problems, display drivers targeting Longhorn
-			have to implement the Windows Display Driver Model. This
+			have to implement the Windows Display Driver Model \cite{dwmalwayson}. This
 			display driver framework introduces the cooperative multitasking
 			features known from regular applications running on the CPU to the
-			GPU. \cite{dwmwddm}
+			GPU \cite{dwmwddm}.
 
 			One of these features is an implementation of preemption called
-			WDDM \emph{scheduling}. The granularity of preemption depends on
+			WDDM \emph{scheduling} \cite{dwmwddm}. The granularity of preemption depends on
 			the version of DirectX that is used and hardware support. When
 			using \emph{basic scheduling}, available from DirectX 9 without
 			special hardware support, primitives and shaders cannot be interrupted,
 			so preemption can only take place in between these basic operations.
 			If the hardware supports it and DirectX 10 is in use, \emph{advanced
 			scheduling} is available, allowing preemption to take place in the mid
-			of primitives or shaders. \cite{dwmwddm}
+			of primitives or shaders \cite{dwmwddm}.
 
 			The other large feature required for cooperative multitasking is
-			virtual memory. As GPUs may have several regions of video memory
+			virtual memory \cite{dwmwddm}. As GPUs may have several regions of video memory
 			specialized for certain tasks, the address space of a GPU may
 			be nonlinear. For this reason, the GPU announces some number of
 			available segments of video memory to the driver framework \cite{gpuseg}.
 			When using the WDDM 1.$x$ model for virtual graphics
 			memory, applications work with segment physical addresses. In the event
 			that a piece of memory is moved or paged out, addresses in the command
-			buffer are patched. This model was updated to using proper virtual
-			addresses with WDDM 2.0, introduced in Windows 10. \cite{wddm2}
+			buffer are patched \cite{wddm2}. This model was updated to using proper virtual
+			addresses with WDDM 2.0, introduced in Windows 10 \cite{wddm2}.
 
 			Finally, a third feature that is necessary to implement the redirection
 			mechanism for DirectX applications described in Section~\ref{sec:dwm}
 			is DirectX surface sharing, which gives an application and the DWM
 			access to the same DirectX surface buffer, so that the DWM can use the
 			same surface for compositing that is used by the application for
-			drawing to. \cite{dwmredirect}
+			drawing to \cite{dwmredirect}.
 
 			The desktop window manager cannot run without a WDDM-compliant
 			display driver \cite{dwmwddm}. If no such driver is available,
@@ -730,32 +722,31 @@
 			of a \textit{user-mode display driver} (also referred to as
 			\textit{user-mode Direct3D driver}) and a kernel-mode
 			\textit{display miniport driver}, sometimes called \textit{kernel-mode
-			display driver}. Both components are solely concerned with handling
+			display driver} \cite{wddmarch}. Both components are solely concerned with handling
 			DirectX operations---calls to all other types of graphics API that
 			are available on Windows, notably including OpenGL in case the driver
 			vendor chooses not to provide direct implementation of OpenGL via
 			an installable client driver, are either not
-			hardware-accelerated or relayed to the appropriate DirectX commands.
+			hardware-accelerated or relayed to the appropriate DirectX commands
+			\cite{d2dvsgdi}.
 			Figure~\ref{fig:arch} visualizes the interaction of a WDDM driver with
 			other GUI-related components.
-			\cite{wddmarch,d2dvsgdi}
 
 		\winsubsection{GDI Hardware Acceleration}{7}
 			During Longhorn development, having GDI directly render to DirectX
-			surfaces in video memory was deemed infeasible. The problem
+			surfaces in video memory was deemed infeasible \cite{dwmredirect}. The problem
 			was not that GDI calls
 			could not be adapted to work with the DirectX buffer format, but
 			GDI renders using the CPU and many GDI operations not only write to
 			the buffer, but also need to read from it, and reading from video memory
 			using the CPU is a very slow operation \cite{dwmredirect}. However,
-			Windows 7 does eliminate the main memory buffer for GDI. The performance
+			Windows 7 does eliminate the main memory buffer for GDI \cite{win7}. The performance
 			issues were resolved by providing explicit hardware acceleration for
 			the offending GDI operations in WDDM version 1.1. In particular,
 			starting with Windows 7, the
 			main memory consumption of the Desktop Window Manager is independent
 			of the number of open windows (however, VRAM consumption still scales
-			linearly with the number of open windows).
-			\cite{win7}
+			linearly with the number of open windows) \cite{win7}.
 
 	\section{Conclusion}
 		Microsoft Windows is an operating system with a diverse audience and
